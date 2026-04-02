@@ -2,6 +2,7 @@
  * Usage Fetcher - Get usage data from provider APIs
  */
 
+import { platform, arch } from "os";
 import { CLIENT_METADATA, getPlatformUserAgent } from "../config/appConstants.js";
 
 // GitHub API config
@@ -9,6 +10,29 @@ const GITHUB_CONFIG = {
   apiVersion: "2022-11-28",
   userAgent: "GitHubCopilotChat/0.26.7",
 };
+
+// Gemini CLI API config - uses retrieveUserQuota endpoint (different from Antigravity)
+const GEMINI_CLI_CONFIG = {
+  baseUrl: "https://cloudcode-pa.googleapis.com/v1internal",
+  quotaApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota",
+  loadProjectApiUrl: "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+};
+
+// Gemini CLI metadata - uses string enum values from types.ts
+const GEMINI_CLI_METADATA = {
+  ideType: "GEMINI_CLI",  // From ClientMetadataIdeType
+  platform: getPlatformEnumForGeminiCLI(),  // DARWIN_AMD64, LINUX_AMD64, etc.
+  pluginType: "GEMINI",  // From ClientMetadataPluginType
+};
+
+function getPlatformEnumForGeminiCLI() {
+  const os = platform();
+  const architecture = arch();
+  if (os === "darwin") return architecture === "arm64" ? "DARWIN_ARM64" : "DARWIN_AMD64";
+  if (os === "linux") return architecture === "arm64" ? "LINUX_ARM64" : "LINUX_AMD64";
+  if (os === "win32") return "WINDOWS_AMD64";
+  return "PLATFORM_UNSPECIFIED";
+}
 
 // Antigravity API config (from Quotio)
 const ANTIGRAVITY_CONFIG = {
@@ -181,30 +205,174 @@ function formatGitHubQuotaSnapshot(quota) {
 }
 
 /**
- * Gemini CLI Usage (Google Cloud)
+ * Gemini CLI Usage - Fetch quota from Google Cloud Code API
+ * Uses retrieveUserQuota endpoint (different from Antigravity's fetchAvailableModels)
  */
 async function getGeminiUsage(accessToken) {
   try {
-    // Gemini CLI uses Google Cloud quotas
-    // Try to get quota info from Cloud Resource Manager
-    const response = await fetch(
-      "https://cloudresourcemanager.googleapis.com/v1/projects?filter=lifecycleState:ACTIVE",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: "application/json",
-        },
-      }
-    );
+    // Fetch subscription info to get project ID
+    const subscriptionInfo = await getGeminiSubscriptionInfo(accessToken);
+    let projectId = subscriptionInfo?.cloudaicompanionProject || null;
 
-    if (!response.ok) {
-      // Quota API may not be accessible, return generic message
-      return { message: "Gemini CLI uses Google Cloud quotas. Check Google Cloud Console for details." };
+    // Handle case where projectId is an object with id property
+    if (projectId && typeof projectId === "object") {
+      projectId = projectId.id || projectId.projectId || null;
     }
 
-    return { message: "Gemini CLI connected. Usage tracked via Google Cloud Console." };
+    console.log("[Gemini CLI] Project ID:", projectId, "Type:", typeof projectId);
+
+    if (!projectId) {
+      return {
+        message: "No project ID available. Please check your Gemini CLI connection.",
+        quotas: {}
+      };
+    }
+
+    // Fetch quota data with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    let response;
+    try {
+      const requestBody = {
+        project: projectId.toString(),
+      };
+      console.log("[Gemini CLI] Request body:", JSON.stringify(requestBody));
+
+      response = await fetch(GEMINI_CLI_CONFIG.quotaApiUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (response.status === 403) {
+      console.log("[Gemini CLI] retrieveUserQuota returned 403 - Gemini CLI may not support quota API for this account type");
+      return {
+        message: "Gemini CLI quota API access forbidden. This is normal for some account types - chat still works.",
+        quotas: {}
+      };
+    }
+
+    if (response.status === 401) {
+      return {
+        message: "Gemini CLI quota API authentication expired. Please re-authorize.",
+        quotas: {}
+      };
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => "Unknown error");
+      console.error(`[Gemini CLI] API error ${response.status}:`, errorBody);
+      
+      if (response.status === 400) {
+        return {
+          message: `Gemini CLI quota API bad request: ${errorBody}`,
+          quotas: {}
+        };
+      }
+      
+      throw new Error(`Gemini CLI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("[Gemini CLI] Quota API raw response:", JSON.stringify(data, null, 2));
+    const quotas = {};
+
+    // Parse quota buckets (from retrieveUserQuota endpoint)
+    // Response format: { buckets: [{ modelId, tokenType, remainingFraction, remainingAmount, resetTime }] }
+    if (data.buckets && Array.isArray(data.buckets)) {
+      for (const bucket of data.buckets) {
+        const modelId = bucket.modelId || bucket.tokenType || "unknown";
+        const remainingFraction = bucket.remainingFraction ?? 0;
+        const remainingPercentage = remainingFraction * 100;
+        
+        // Check if API provides real numbers or just percentages
+        const hasRealNumbers = bucket.remainingAmount !== undefined && bucket.remainingAmount !== null;
+        
+        let remaining = 0;
+        let total = 0;
+        let used = 0;
+        
+        if (hasRealNumbers) {
+          // API returns real remainingAmount - calculate actual used/total
+          remaining = parseInt(bucket.remainingAmount, 10) || 0;
+          if (remainingFraction > 0) {
+            total = Math.round(remaining / remainingFraction);
+          } else {
+            total = remaining; // If 0% remaining, total = remaining (which is 0)
+          }
+          used = total - remaining;
+        } else {
+          // API only returns percentages - no real numbers available
+          // Mark as unknown to avoid displaying fake 1000/1000
+          remaining = null;
+          total = null;
+          used = null;
+        }
+
+        quotas[modelId] = {
+          used,
+          total,
+          remaining,
+          remainingPercentage, // Always have this from API
+          resetAt: parseResetTime(bucket.resetTime),
+          unlimited: remainingFraction >= 0.99, // If 99%+ remaining, likely unlimited
+          displayName: modelId,
+          hasRealNumbers, // Flag to tell UI which format to use
+        };
+      }
+    }
+
+    return {
+      plan: subscriptionInfo?.currentTier?.name || "Gemini CLI",
+      quotas,
+      subscriptionInfo,
+    };
   } catch (error) {
-    return { message: "Unable to fetch Gemini usage. Check Google Cloud Console." };
+    console.error("[Gemini CLI Usage] Error:", error.message);
+    return { message: `Gemini CLI error: ${error.message}` };
+  }
+}
+
+/**
+ * Get Gemini CLI subscription info using loadCodeAssist endpoint
+ */
+async function getGeminiSubscriptionInfo(accessToken) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+  try {
+    const response = await fetch(GEMINI_CLI_CONFIG.loadProjectApiUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        metadata: GEMINI_CLI_METADATA, 
+        mode: 1  // FULL_ELIGIBILITY_CHECK
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      console.log("[Gemini CLI Subscription] API returned:", response.status);
+      return null;
+    }
+    const data = await response.json();
+    console.log("[Gemini CLI Subscription] Response:", JSON.stringify(data, null, 2));
+    return data;
+  } catch (error) {
+    console.error("[Gemini CLI Subscription] Error:", error.message);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
