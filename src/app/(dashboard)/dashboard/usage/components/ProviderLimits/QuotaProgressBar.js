@@ -107,7 +107,7 @@ export default function QuotaProgressBar({
       <div className="flex items-center justify-between text-xs text-text-muted">
         <span>
           {used === null || total === null 
-            ? "Quota: Unknown"
+            ? `${percentage}% available`
             : `${used.toLocaleString()} / ${total.toLocaleString()} requests`}
         </span>
         {countdown !== "-" && (

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import ProviderIcon from "@/shared/components/ProviderIcon";
-import ProviderLimitCard from "./ProviderLimitCard";
 import QuotaTable from "./QuotaTable";
-import { parseQuotaData, calculatePercentage } from "./utils";
+import QuotaGrid from "./QuotaGrid";
+import { parseQuotaData, calculatePercentage, formatResetTime } from "./utils";
 import Card from "@/shared/components/Card";
 import Button from "@/shared/components/Button";
 import { USAGE_SUPPORTED_PROVIDERS } from "@/shared/constants/providers";
@@ -273,6 +273,24 @@ export default function ProviderLimits() {
     return a.provider.localeCompare(b.provider);
   });
 
+  // Group connections by provider
+  const groupedConnections = sortedConnections.reduce((groups, conn) => {
+    const provider = conn.provider;
+    if (!groups[provider]) {
+      groups[provider] = [];
+    }
+    groups[provider].push(conn);
+    return groups;
+  }, {});
+
+  // Sort providers by USAGE_SUPPORTED_PROVIDERS order
+  const sortedProviders = Object.keys(groupedConnections).sort((a, b) => {
+    const orderA = USAGE_SUPPORTED_PROVIDERS.indexOf(a);
+    const orderB = USAGE_SUPPORTED_PROVIDERS.indexOf(b);
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b);
+  });
+
   // Calculate summary stats
   const totalProviders = sortedConnections.length;
   const activeWithLimits = Object.values(quotaData).filter(
@@ -358,48 +376,47 @@ export default function ProviderLimits() {
         </div>
       </div>
 
-      {/* Provider Cards Grid */}
-      <div className="flex flex-col gap-4">
-        {sortedConnections.map((conn) => {
-          const quota = quotaData[conn.id];
-          const isLoading = loading[conn.id];
-          const error = errors[conn.id];
-
-          // Use table layout for all providers
+      {/* Provider Group Cards - Full Width */}
+      <div className="flex flex-col gap-6">
+        {sortedProviders.map((provider) => {
+          const accounts = groupedConnections[provider];
+          const isLoadingAny = accounts.some((conn) => loading[conn.id]);
+          
           return (
-            <Card key={conn.id} padding="none">
+            <Card key={provider} padding="none">
+              {/* Provider Header */}
               <div className="p-6 border-b border-black/10 dark:border-white/10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
                       <ProviderIcon
-                        src={`/providers/${conn.provider}.png`}
-                        alt={conn.provider}
+                        src={`/providers/${provider}.png`}
+                        alt={provider}
                         size={40}
                         className="object-contain"
                         fallbackText={
-                          conn.provider?.slice(0, 2).toUpperCase() || "PR"
+                          provider?.slice(0, 2).toUpperCase() || "PR"
                         }
                       />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-text-primary capitalize">
-                        {conn.provider}
+                        {provider.replace(/-/g, " ")}
                       </h3>
-                      {conn.name && (
-                        <p className="text-sm text-text-muted">{conn.name}</p>
-                      )}
+                      <p className="text-sm text-text-muted">
+                        {accounts.length} account{accounts.length > 1 ? "s" : ""}
+                      </p>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => refreshProvider(conn.id, conn.provider)}
-                    disabled={isLoading}
+                    onClick={() => accounts.forEach((conn) => refreshProvider(conn.id, conn.provider))}
+                    disabled={isLoadingAny}
                     className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
-                    title="Refresh quota"
+                    title="Refresh all accounts"
                   >
                     <span
-                      className={`material-symbols-outlined text-[20px] text-text-muted ${isLoading ? "animate-spin" : ""}`}
+                      className={`material-symbols-outlined text-[20px] text-text-muted ${isLoadingAny ? "animate-spin" : ""}`}
                     >
                       refresh
                     </span>
@@ -407,27 +424,106 @@ export default function ProviderLimits() {
                 </div>
               </div>
 
+              {/* Accounts - Horizontal Layout */}
               <div className="p-6">
-                {isLoading ? (
-                  <div className="text-center py-8 text-text-muted">
-                    <span className="material-symbols-outlined text-[32px] animate-spin">
-                      progress_activity
-                    </span>
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-8">
-                    <span className="material-symbols-outlined text-[32px] text-red-500">
-                      error
-                    </span>
-                    <p className="mt-2 text-sm text-text-muted">{error}</p>
-                  </div>
-                ) : quota?.message ? (
-                  <div className="text-center py-8">
-                    <p className="text-sm text-text-muted">{quota.message}</p>
-                  </div>
-                ) : (
-                  <QuotaTable quotas={quota?.quotas} />
-                )}
+                <div className="flex flex-row gap-4 overflow-x-auto pb-2">
+                  {accounts.map((conn) => {
+                    const quota = quotaData[conn.id];
+                    const isLoading = loading[conn.id];
+                    const error = errors[conn.id];
+
+                    return (
+                      <div
+                        key={conn.id}
+                        className={`flex-shrink-0 w-96 p-5 rounded-xl border transition-all duration-200 hover:shadow-md ${
+                          isLoading ? "opacity-50" : ""
+                        } ${error ? "border-red-300 bg-red-50/30" : "border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]"}`}
+                      >
+                        {/* Account Name Header */}
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-black/5 dark:border-white/5">
+                          <h4 className="font-semibold text-sm text-text-primary truncate" title={conn.name}>
+                            {conn.name || "Unnamed"}
+                          </h4>
+                          <button
+                            onClick={() => refreshProvider(conn.id, conn.provider)}
+                            disabled={isLoading}
+                            className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:opacity-30"
+                          >
+                            <span className={`material-symbols-outlined text-[16px] text-text-muted ${isLoading ? "animate-spin" : ""}`}>
+                              refresh
+                            </span>
+                          </button>
+                        </div>
+                        
+                        {/* Models List - Vertical */}
+                        {isLoading ? (
+                          <div className="flex items-center justify-center py-4">
+                            <span className="material-symbols-outlined animate-spin text-[20px] text-text-muted">
+                              progress_activity
+                            </span>
+                          </div>
+                        ) : error ? (
+                          <div className="text-xs text-red-500 text-center py-2">
+                            ⚠️ {error.slice(0, 40)}...
+                          </div>
+                        ) : quota?.message ? (
+                          <div className="text-xs text-text-muted text-center py-2">
+                            {quota.message}
+                          </div>
+                        ) : quota?.quotas?.length > 0 ? (
+                          <div className="space-y-2">
+                            {quota.quotas.map((q, idx) => {
+                              const pct = q.remainingPercentage || 0;
+                              const colorClass = pct > 70 ? "bg-green-500" : pct > 30 ? "bg-yellow-500" : "bg-red-500";
+                              const textClass = pct > 70 ? "text-green-500" : pct > 30 ? "text-yellow-500" : "text-red-500";
+                              
+                              return (
+                                <div 
+                                  key={idx} 
+                                  className="py-2 px-3 rounded bg-white/50 dark:bg-black/20"
+                                >
+                                  {/* Model Name & Percentage */}
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="text-sm">
+                                        {pct > 70 ? "🟢" : pct > 30 ? "🟡" : "🔴"}
+                                      </span>
+                                      <span className="text-xs text-text-primary truncate" title={q.name}>
+                                        {q.name.length > 30 ? q.name.slice(0, 27) + "..." : q.name}
+                                      </span>
+                                    </div>
+                                    <span className={`text-sm font-bold ${textClass}`}>
+                                      {Math.round(pct)}%
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Health Bar / Progress Bar */}
+                                  <div className="h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full ${colorClass} transition-all duration-300`}
+                                      style={{ width: `${Math.min(pct, 100)}%` }}
+                                    />
+                                  </div>
+                                  
+                                  {/* Reset Time */}
+                                  {q.resetAt && (
+                                    <p className="text-[10px] text-text-muted mt-1">
+                                      Reset in {formatResetTime(q.resetAt)}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-text-muted text-center py-4">
+                            No quota data
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </Card>
           );
