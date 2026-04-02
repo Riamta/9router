@@ -1,219 +1,205 @@
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* macOS-inspired Color Palette with Terracotta Primary */
+/* ========================================
+   PURE BLACK/WHITE THEME - NO COLORS
+   ======================================== */
+
 :root {
-  /* Primary - Warm Coral/Terracotta */
-  --color-primary: #D97757;
-  --color-primary-hover: #C56243;
+  --radius: 0.625rem;
   
-  /* Light theme */
-  --color-bg: #FBF9F6;
-  --color-bg-alt: #F5F1ED;
-  --color-surface: #FFFFFF;
-  --color-sidebar: rgba(246, 246, 246, 0.8);
-  --color-border: rgba(0, 0, 0, 0.1);
-  --color-text-main: #383733;
-  --color-text-muted: #75736E;
+  /* Pure black background */
+  --background: #000000;
+  --foreground: #ffffff;
   
-  /* Shadows - subtle macOS style */
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.015);
-  --shadow-warm: 0 2px 12px -2px rgba(217, 119, 87, 0.12);
-  --shadow-elevated: 0 12px 28px -4px rgba(60, 50, 45, 0.06);
+  /* Card - Dark gray */
+  --card: #111111;
+  --card-foreground: #ffffff;
+  
+  /* Popover */
+  --popover: #111111;
+  --popover-foreground: #ffffff;
+  
+  /* Primary - Pure white */
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  
+  /* Secondary - Darker gray */
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+  
+  /* Muted - Brighter for better contrast */
+  --muted: #1a1a1a;
+  --muted-foreground: #a0a0a0;
+  
+  /* Accent - Brighter gray */
+  --accent: #222222;
+  --accent-foreground: #ffffff;
+  
+  /* Destructive - Bright red */
+  --destructive: #ff3333;
+  --destructive-foreground: #ffffff;
+  
+  /* Borders - More visible */
+  --border: #333333;
+  --input: #333333;
+  --ring: #ffffff;
+  
+  /* Sidebar */
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #1a1a1a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #222222;
+  --sidebar-ring: #ffffff;
 }
 
-.dark {
-  /* Dark theme */
-  --color-bg: #191918;
-  --color-bg-alt: #1F1F1E;
-  --color-surface: #242423;
-  --color-sidebar: rgba(30, 30, 30, 0.8);
-  --color-border: rgba(255, 255, 255, 0.1);
-  --color-text-main: #ECEBE8;
-  --color-text-muted: #9E9D99;
-  
-  /* Dark shadows - subtle macOS style */
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-warm: 0 2px 12px -2px rgba(217, 119, 87, 0.15);
-  --shadow-elevated: 0 12px 28px -4px rgba(0, 0, 0, 0.3);
+/* Light theme */
+.light {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #fafafa;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #000000;
+  --muted: #f5f5f5;
+  --muted-foreground: #666666;
+  --accent: #eeeeee;
+  --accent-foreground: #000000;
+  --destructive: #ff4444;
+  --destructive-foreground: #ffffff;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #000000;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #000000;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #000000;
 }
 
-@theme inline {
-  /* Primary */
-  --color-primary: var(--color-primary);
-  --color-primary-hover: var(--color-primary-hover);
+/* ========================================
+   TAILWIND v4 THEME MAPPING
+   ======================================== */
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   
-  /* Auto-switch colors (use CSS variables from :root/.dark) */
-  --color-bg: var(--color-bg);
-  --color-surface: var(--color-surface);
-  --color-sidebar: var(--color-sidebar);
-  --color-border: var(--color-border);
-  --color-text-main: var(--color-text-main);
-  --color-text-muted: var(--color-text-muted);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   
-  /* Static colors (for explicit light/dark usage) */
-  --color-bg-light: #FBF9F6;
-  --color-bg-dark: #191918;
-  --color-surface-light: #FFFFFF;
-  --color-surface-dark: #242423;
-  --color-sidebar-light: #F0EFEC;
-  --color-sidebar-dark: #1F1F1E;
-  --color-border-light: #E6E4DD;
-  --color-border-dark: #333331;
-  --color-text-main-light: #383733;
-  --color-text-main-dark: #ECEBE8;
-  --color-text-muted-light: #75736E;
-  --color-text-muted-dark: #9E9D99;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   
-  /* Shadows */
-  --shadow-soft: var(--shadow-soft);
-  --shadow-warm: var(--shadow-warm);
-  --shadow-elevated: var(--shadow-elevated);
-  
-  /* Font - macOS system fonts */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
-/* Base styles */
-body {
-  background-color: var(--color-bg);
-  color: var(--color-text-main);
-  font-family: var(--font-sans);
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Selection */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Selection - White on black */
 ::selection {
-  background-color: rgba(217, 119, 87, 0.2);
-  color: var(--color-primary);
+  background-color: var(--foreground);
+  color: var(--background);
 }
 
-/* Custom scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+/* ========================================
+   SCROLLBAR - Thin black/white
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
   border-radius: 20px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.5);
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
 }
 
-/* Hero gradient */
-.bg-hero-gradient {
-  background: linear-gradient(180deg, #F5F1ED 0%, #FEFCFB 100%);
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
-.dark .bg-hero-gradient {
-  background: linear-gradient(180deg, #1F1F1E 0%, #191918 100%);
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Material Symbols */
-.material-symbols-outlined {
-  font-family: 'Material Symbols Outlined', sans-serif;
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  font-feature-settings: 'liga';
-  -webkit-font-feature-settings: 'liga';
-  -webkit-font-smoothing: antialiased;
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.material-symbols-outlined.fill-1 {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+.animate-fade-in {
+  animation: fade-in 300ms ease-out;
 }
 
-/* Animations */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes border-glow {
-  0%, 100% {
-    box-shadow: 0 0 5px rgba(217, 119, 87, 0.3), 0 0 10px rgba(217, 119, 87, 0.2);
-    border-color: rgba(217, 119, 87, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 10px rgba(217, 119, 87, 0.5), 0 0 20px rgba(217, 119, 87, 0.3);
-    border-color: rgba(217, 119, 87, 0.8);
-  }
-}
-
-.animate-border-glow {
-  animation: border-glow 2s ease-in-out infinite;
-}
-
-/* macOS Vibrancy/Blur Effect */
-.bg-vibrancy {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.dark .bg-vibrancy {
-  background: rgba(30, 30, 30, 0.72);
-}
-
-/* macOS Traffic Lights */
-.traffic-lights {
-  display: flex;
-  gap: 8px;
-}
-
-.traffic-light {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.traffic-light.red {
-  background: #FF5F56;
-}
-
-.traffic-light.yellow {
-  background: #FFBD2E;
-}
-
-.traffic-light.green {
-  background: #27C93F;
+.animate-slide-up {
+  animation: slide-up 300ms ease-out;
 }

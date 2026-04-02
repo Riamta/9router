@@ -14,7 +14,7 @@ WORKDIR /app
 LABEL org.opencontainers.image.title="9router"
 
 ENV NODE_ENV=production
-ENV PORT=20128
+ENV PORT=20129
 ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -33,7 +33,7 @@ RUN mkdir -p /app/data
 RUN printf '#!/bin/sh\nchown -R node:node /app/data 2>/dev/null; exec su-exec node "$@"\n' > /entrypoint.sh && chmod +x /entrypoint.sh
 RUN apk add --no-cache su-exec
 
-EXPOSE 20128
+EXPOSE 20129
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "server.js"]

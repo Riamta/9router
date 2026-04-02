@@ -52,7 +52,7 @@ async function registerTunnelUrl(shortId, tunnelUrl) {
   });
 }
 
-export async function enableTunnel(localPort = 20128) {
+export async function enableTunnel(localPort = 20129) {
   manualDisabled = false;
   if (isCloudflaredRunning()) {
     const existing = loadState();

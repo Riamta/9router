@@ -6,6 +6,7 @@ const nextConfig = {
     unoptimized: true
   },
   env: {},
+  turbopack: {},
   webpack: (config, { isServer }) => {
     // Ignore fs/path modules in browser bundle
     if (!isServer) {
@@ -16,7 +17,7 @@ const nextConfig = {
       };
     }
     // Stop watching logs directory to prevent HMR during streaming
-    config.watchOptions = { ...config.watchOptions, ignored: /[\\/](logs|\.next)[\\/]/ };
+    config.watchOptions = { ...config.watchOptions, ignored: /[\\/](logs|\.next)[\\]/ };
     return config;
   },
   async rewrites() {

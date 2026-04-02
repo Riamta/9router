@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@/lib/utils";
 
 export default function Card({
   children,
@@ -15,8 +15,8 @@ export default function Card({
 }) {
   const paddings = {
     none: "",
-    xs: "p-3",
-    sm: "p-4",
+    xs: "p-4",
+    sm: "p-5",
     md: "p-6",
     lg: "p-8",
   };
@@ -24,29 +24,27 @@ export default function Card({
   return (
     <div
       className={cn(
-        "bg-surface",
-        "border border-black/5 dark:border-white/5",
-        "rounded-lg shadow-sm",
-        hover && "hover:shadow-md hover:border-primary/30 transition-all cursor-pointer",
+        "bg-card text-card-foreground border border-border rounded-xl shadow-sm",
+        hover && "hover:border-foreground/40 hover:shadow-lg hover:shadow-foreground/10 transition-all duration-300",
         paddings[padding],
         className
       )}
       {...props}
     >
       {(title || action) && (
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             {icon && (
-              <div className="p-2 rounded-lg bg-bg text-text-muted">
+              <div className="p-2.5 rounded-xl bg-foreground text-background shadow-md">
                 <span className="material-symbols-outlined text-[20px]">{icon}</span>
               </div>
             )}
             <div>
               {title && (
-                <h3 className="text-text-main font-semibold">{title}</h3>
+                <h3 className="text-sm font-black tracking-wide text-foreground uppercase">{title}</h3>
               )}
               {subtitle && (
-                <p className="text-sm text-text-muted">{subtitle}</p>
+                <p className="text-xs font-semibold text-foreground/70">{subtitle}</p>
               )}
             </div>
           </div>
@@ -58,16 +56,10 @@ export default function Card({
   );
 }
 
-// Sub-component: Bordered section inside Card
 Card.Section = function CardSection({ children, className, ...props }) {
   return (
     <div
-      className={cn(
-        "p-4 rounded-lg",
-        "bg-black/[0.02] dark:bg-white/[0.02]",
-        "border border-black/5 dark:border-white/5",
-        className
-      )}
+      className={cn("p-5 rounded-xl border border-border bg-accent/50", className)}
       {...props}
     >
       {children}
@@ -75,14 +67,13 @@ Card.Section = function CardSection({ children, className, ...props }) {
   );
 };
 
-// Sub-component: Hoverable row inside Card
 Card.Row = function CardRow({ children, className, ...props }) {
   return (
     <div
       className={cn(
-        "p-3 -mx-3 px-3 transition-colors",
-        "border-b border-black/5 dark:border-white/5 last:border-b-0",
-        "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]",
+        "p-4 -mx-4 px-4 transition-colors rounded-lg",
+        "border-b border-border last:border-b-0",
+        "hover:bg-accent/50",
         className
       )}
       {...props}
@@ -92,19 +83,13 @@ Card.Row = function CardRow({ children, className, ...props }) {
   );
 };
 
-// Sub-component: List item with hover actions (macOS style)
-Card.ListItem = function CardListItem({ 
-  children, 
-  actions,
-  className, 
-  ...props 
-}) {
+Card.ListItem = function CardListItem({ children, actions, className, ...props }) {
   return (
     <div
       className={cn(
-        "group flex items-center justify-between p-3 -mx-3 px-3",
-        "border-b border-black/[0.03] dark:border-white/[0.03] last:border-b-0",
-        "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]",
+        "group flex items-center justify-between p-4 -mx-4 px-4 rounded-lg",
+        "border-b border-border last:border-b-0",
+        "hover:bg-accent/50",
         "transition-colors",
         className
       )}
@@ -112,11 +97,10 @@ Card.ListItem = function CardListItem({
     >
       <div className="flex-1 min-w-0">{children}</div>
       {actions && (
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           {actions}
         </div>
       )}
     </div>
   );
 };
-

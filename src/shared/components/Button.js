@@ -1,56 +1,63 @@
 "use client";
 
-import { cn } from "@/shared/utils/cn";
+import { Slot } from "@radix-ui/react-slot";
+import { cva } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-const variants = {
-  primary: "bg-gradient-to-b from-primary to-primary-hover text-white shadow-sm",
-  secondary: "bg-white dark:bg-white/10 border border-black/10 dark:border-white/10 text-text-main hover:bg-black/5 dark:hover:bg-white/5",
-  outline: "border border-black/15 dark:border-white/15 text-text-main hover:bg-black/5",
-  ghost: "text-text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-main",
-  danger: "bg-red-500 text-white hover:bg-red-600 shadow-sm",
-};
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold tracking-wide transition-all duration-200 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  {
+    variants: {
+      variant: {
+        default: "bg-foreground text-background shadow-lg shadow-foreground/20 hover:bg-foreground/90 hover:shadow-foreground/30",
+        destructive: "bg-destructive text-white shadow-lg shadow-destructive/30 hover:bg-destructive/90",
+        outline: "border-2 border-foreground/30 bg-transparent text-foreground hover:bg-foreground hover:text-background hover:border-foreground",
+        secondary: "bg-accent text-foreground hover:bg-accent/80",
+        ghost: "hover:bg-accent text-foreground",
+        link: "text-foreground underline-offset-4 hover:underline",
+        // Legacy aliases
+        danger: "bg-destructive text-white shadow-lg shadow-destructive/30 hover:bg-destructive/90",
+        primary: "bg-foreground text-background shadow-lg shadow-foreground/20 hover:bg-foreground/90 hover:shadow-foreground/30",
+      },
+      size: {
+        default: "h-10 px-5 py-2",
+        sm: "h-9 px-4 text-xs",
+        md: "h-11 px-5",
+        lg: "h-12 px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
 
-const sizes = {
-  sm: "h-7 px-3 text-xs rounded-md",
-  md: "h-9 px-4 text-sm rounded-lg",
-  lg: "h-11 px-6 text-sm rounded-lg",
-};
+function Button({ className, variant = "default", size = "default", asChild = false, icon, iconRight, loading, fullWidth, children, ...props }) {
+  const Comp = asChild ? Slot : "button";
 
-export default function Button({
-  children,
-  variant = "primary",
-  size = "md",
-  icon,
-  iconRight,
-  disabled = false,
-  loading = false,
-  fullWidth = false,
-  className,
-  ...props
-}) {
   return (
-    <button
+    <Comp
       className={cn(
-        "inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 cursor-pointer",
-        "active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
-        variants[variant],
-        sizes[size],
-        fullWidth && "w-full",
-        className
+        buttonVariants({ variant, size, className }),
+        fullWidth && "w-full"
       )}
-      disabled={disabled || loading}
+      disabled={props.disabled || loading}
       {...props}
     >
       {loading ? (
-        <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+        <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
       ) : icon ? (
-        <span className="material-symbols-outlined text-[18px]">{icon}</span>
+        <span className="material-symbols-outlined text-[16px]">{icon}</span>
       ) : null}
       {children}
       {iconRight && !loading && (
-        <span className="material-symbols-outlined text-[18px]">{iconRight}</span>
+        <span className="material-symbols-outlined text-[16px]">{iconRight}</span>
       )}
-    </button>
+    </Comp>
   );
 }
 
+export { Button, buttonVariants };
+export default Button;

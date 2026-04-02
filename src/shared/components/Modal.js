@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { cn } from "@/shared/utils/cn";
-import Button from "./Button";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export default function Modal({
   isOpen,
@@ -50,18 +50,18 @@ export default function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Overlay */}
+      {/* Overlay - Darker for better contrast */}
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/95 backdrop-blur-md"
         onClick={closeOnOverlay ? onClose : undefined}
       />
 
       {/* Modal content */}
       <div
         className={cn(
-          "relative w-full bg-surface",
-          "border border-black/10 dark:border-white/10",
-          "rounded-xl shadow-2xl",
+          "relative w-full bg-card",
+          "border-2 border-border",
+          "rounded-xl shadow-2xl shadow-foreground/10",
           "animate-in fade-in zoom-in-95 duration-200",
           sizes[size],
           className
@@ -69,15 +69,15 @@ export default function Modal({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5">
+          <div className="flex items-center justify-between p-6 border-b-2 border-border">
             <div className="flex items-center">
               <div className="flex items-center gap-2 mr-4">
-                <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
-                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-                <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+                <div className="w-3 h-3 rounded-full bg-foreground" />
+                <div className="w-3 h-3 rounded-full bg-foreground/60" />
+                <div className="w-3 h-3 rounded-full bg-foreground/30" />
               </div>
               {title && (
-                <h2 className="text-lg font-semibold text-text-main">
+                <h2 className="text-base font-black tracking-wide text-foreground uppercase">
                   {title}
                 </h2>
               )}
@@ -85,20 +85,22 @@ export default function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-text-muted hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="p-2 rounded-lg text-foreground/60 hover:text-foreground hover:bg-accent transition-colors"
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <span className="material-symbols-outlined text-[24px]">close</span>
               </button>
             )}
           </div>
         )}
 
         {/* Body */}
-        <div className="p-6 max-h-[calc(80vh-140px)] overflow-y-auto">{children}</div>
+        <div className="p-6 max-h-[calc(80vh-140px)] overflow-y-auto">
+          {children}
+        </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-black/5 dark:border-white/5">
+          <div className="flex items-center justify-end gap-3 p-6 border-t-2 border-border">
             {footer}
           </div>
         )}
@@ -127,7 +129,7 @@ export function ConfirmModal({
       size="sm"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={loading}>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             {cancelText}
           </Button>
           <Button variant={variant} onClick={onConfirm} loading={loading}>
@@ -136,8 +138,7 @@ export function ConfirmModal({
         </>
       }
     >
-      <p className="text-text-muted">{message}</p>
+      <p className="text-foreground/80 font-medium">{message}</p>
     </Modal>
   );
 }
-
