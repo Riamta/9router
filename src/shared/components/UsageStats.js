@@ -6,7 +6,7 @@ import Badge from "./Badge";
 import Card from "./Card";
 import OverviewCards from "@/app/(dashboard)/dashboard/usage/components/OverviewCards";
 import UsageTable, { fmt, fmtTime } from "@/app/(dashboard)/dashboard/usage/components/UsageTable";
-import ProviderGrid from "@/app/(dashboard)/dashboard/usage/components/ProviderGrid";
+import ProviderTopology from "@/app/(dashboard)/dashboard/usage/components/ProviderTopology";
 import UsageChart from "@/app/(dashboard)/dashboard/usage/components/UsageChart";
 
 function timeAgo(timestamp) {
@@ -416,15 +416,21 @@ export default function UsageStats() {
       {/* Overview cards */}
       {loading ? spinner : <OverviewCards stats={stats} />}
 
-      {/* Provider Grid */}
+      {/* Provider Topology Graph + Recent Requests */}
       {loading ? spinner : (
-        <ProviderGrid
-          providers={providers}
-          providerStats={stats.byProvider || {}}
-          activeRequests={stats.activeRequests || []}
-          lastProvider={stats.recentRequests?.[0]?.provider || ""}
-          errorProvider={stats.errorProvider || ""}
-        />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2">
+            <ProviderTopology
+              providers={providers}
+              activeRequests={stats.activeRequests || []}
+              lastProvider={stats.recentRequests?.[0]?.provider || ""}
+              errorProvider={stats.errorProvider || ""}
+            />
+          </div>
+          <div className="xl:col-span-1">
+            <RecentRequests requests={stats.recentRequests || []} />
+          </div>
+        </div>
       )}
 
       {/* Token / Cost chart - sync period */}
