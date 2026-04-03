@@ -166,15 +166,15 @@ export function AppSidebar({ onClose, className }) {
             </div>
 
             {/* Tools */}
-            {enableTranslator && (
-              <div className="space-y-1 px-2">
-                <p className="px-3 py-2 text-[11px] font-bold text-foreground/60 uppercase tracking-widest">
-                  Tools
-                </p>
+            <div className="space-y-1 px-2">
+              <p className="px-3 py-2 text-[11px] font-bold text-foreground/60 uppercase tracking-widest">
+                Tools
+              </p>
+              <NavItem item={{ href: "/dashboard/console-log", label: "Console", icon: FileCode }} />
+              {enableTranslator && (
                 <NavItem item={{ href: "/dashboard/translator", label: "Translator", icon: Languages }} />
-                <NavItem item={{ href: "/dashboard/console-log", label: "Console", icon: FileCode }} />
-              </div>
-            )}
+              )}
+            </div>
 
             {/* System */}
             <div className="space-y-1 px-2">

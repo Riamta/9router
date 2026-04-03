@@ -1,6 +1,7 @@
 import { callCloudWithMachineId } from "@/shared/utils/cloud.js";
 import { handleChat } from "@/sse/handlers/chat.js";
 import { initTranslators } from "open-sse/translator/index.js";
+import { debugLog } from "@/lib/debugLogger.js";
 
 let initialized = false;
 
@@ -11,7 +12,7 @@ async function ensureInitialized() {
   if (!initialized) {
     await initTranslators();
     initialized = true;
-    console.log("[SSE] Translators initialized");
+    debugLog("[SSE] Translators initialized");
   }
 }
 
@@ -30,8 +31,10 @@ export async function OPTIONS() {
 
 export async function POST(request) {  
   // Fallback to local handling
+  debugLog("/v1/chat/completions POST received, headers:", Object.fromEntries(request.headers.entries()));
   await ensureInitialized();
   
-  return await handleChat(request);
+  const result = await handleChat(request);
+  debugLog("handleChat returned, success:", result?.ok);
+  return result;
 }
-

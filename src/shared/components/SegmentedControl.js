@@ -31,7 +31,7 @@ export default function SegmentedControl({
             "px-4 rounded-md font-medium transition-all",
             sizes[size],
             value === option.value
-              ? "bg-white dark:bg-white/10 text-text-main shadow-sm"
+              ? "bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm"
               : "text-text-muted hover:text-text-main"
           )}
         >

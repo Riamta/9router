@@ -62,6 +62,25 @@ export function parseSSEToOpenAIResponse(rawSSE, fallbackModel) {
     if (choice?.finish_reason) finishReason = choice.finish_reason;
     if (chunk?.usage && typeof chunk.usage === "object") usage = chunk.usage;
 
+    // Gemini format (usageMetadata)
+    if (!usage && chunk?.usageMetadata) {
+      const um = chunk.usageMetadata;
+      usage = {
+        prompt_tokens: um.promptTokenCount || 0,
+        completion_tokens: um.candidatesTokenCount || 0,
+        total_tokens: um.totalTokenCount || 0
+      };
+      if (um.thoughtsTokenCount > 0) {
+        usage.completion_tokens_details = { reasoning_tokens: um.thoughtsTokenCount };
+      }
+      console.log("[DEBUG] Extracted Gemini usageMetadata:", usage);
+    }
+
+    // Debug logging for chunks with usage
+    if (chunk?.usageMetadata || chunk?.usage) {
+      console.log("[DEBUG] Chunk has usage data:", JSON.stringify({ usageMetadata: chunk?.usageMetadata, usage: chunk?.usage }).slice(0, 200));
+    }
+
     // Accumulate tool_calls from streaming deltas
     if (Array.isArray(delta.tool_calls)) {
       for (const tc of delta.tool_calls) {

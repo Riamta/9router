@@ -128,6 +128,7 @@ export function translateNonStreamingResponse(responseBody, targetFormat, source
  * Handle non-streaming response from provider.
  */
 export async function handleNonStreamingResponse({ providerResponse, provider, model, sourceFormat, targetFormat, body, stream, translatedBody, finalBody, requestStartTime, connectionId, apiKey, clientRawRequest, onRequestSuccess, reqLogger, trackDone, appendLog }) {
+  console.log(`[DEBUG] handleNonStreamingResponse called: provider=${provider}, content-type=${providerResponse.headers.get("content-type")}`);
   trackDone();
   const contentType = providerResponse.headers.get("content-type") || "";
   let responseBody;
@@ -154,6 +155,11 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
   if (onRequestSuccess) await onRequestSuccess();
 
   const usage = extractUsageFromResponse(responseBody);
+  console.log(`[DEBUG] Extracted usage for ${provider}:`, usage);
+  console.log(`[DEBUG] Response body keys:`, Object.keys(responseBody || {}));
+  console.log(`[DEBUG] Response body sample:`, JSON.stringify(responseBody).slice(0, 300));
+  console.log(`[DEBUG] Response body usage:`, responseBody?.usage);
+  console.log(`[DEBUG] Response body usageMetadata:`, responseBody?.usageMetadata);
   appendLog({ tokens: usage, status: "200 OK" });
   saveUsageStats({ provider, model, tokens: usage, connectionId, apiKey, endpoint: clientRawRequest?.endpoint });
 
@@ -188,6 +194,10 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
   reqLogger.logConvertedResponse(translatedResponse);
 
   const totalLatency = Date.now() - requestStartTime;
+  console.log(`[DEBUG] Saving request detail for ${provider}:`, { 
+    provider, model, connectionId, 
+    usage: usage || { prompt_tokens: 0, completion_tokens: 0 }
+  });
   saveRequestDetail(buildRequestDetail({
     provider, model, connectionId,
     latency: { ttft: totalLatency, total: totalLatency },
@@ -201,8 +211,10 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
       finish_reason: translatedResponse?.choices?.[0]?.finish_reason || "unknown"
     },
     status: "success"
-  }, { endpoint: clientRawRequest?.endpoint || null })).catch(err => {
-    console.error("[RequestDetail] Failed to save:", err.message);
+  }, { endpoint: clientRawRequest?.endpoint || null })).then(() => {
+    console.log(`[DEBUG] Request detail saved successfully for ${provider}/${model}`);
+  }).catch(err => {
+    console.error(`[DEBUG] Failed to save request detail for ${provider}:`, err.message);
   });
 
   return {

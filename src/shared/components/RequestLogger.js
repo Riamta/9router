@@ -114,7 +114,7 @@ export default function RequestLogger() {
         </div>
       </Card>
       <div className="text-[10px] text-text-muted italic">
-        Logs are saved to log.txt in the application data directory.
+        Request logs from database with input/output tokens.
       </div>
     </div>
   );

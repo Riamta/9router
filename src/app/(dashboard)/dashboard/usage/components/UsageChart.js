@@ -50,16 +50,16 @@ export default function UsageChart({ period = "7d" }) {
 
   return (
     <Card className="p-4 flex flex-col gap-3">
-      <div className="flex items-center gap-1 bg-bg-subtle rounded-lg p-1 border border-border self-start">
+      <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded-lg p-1 border border-border self-start">
         <button
           onClick={() => setViewMode("tokens")}
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "tokens" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "tokens" ? "bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-black/5 dark:hover:bg-white/10"}`}
         >
           Tokens
         </button>
         <button
           onClick={() => setViewMode("cost")}
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "cost" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "cost" ? "bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-black/5 dark:hover:bg-white/10"}`}
         >
           Cost
         </button>

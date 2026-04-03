@@ -396,13 +396,13 @@ export default function UsageStats() {
     <div className="flex flex-col gap-6">
       {/* Period selector */}
       <div className="flex items-center gap-2 self-end">
-        <div className="flex items-center gap-1 bg-bg-subtle rounded-lg p-1 border border-border">
+        <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded-lg p-1 border border-border">
           {PERIODS.map((p) => (
             <button
               key={p.value}
               onClick={() => setPeriod(p.value)}
               disabled={fetching}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${period === p.value ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${period === p.value ? "bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-black/5 dark:hover:bg-white/10"}`}
             >
               {p.label}
             </button>
@@ -420,7 +420,7 @@ export default function UsageStats() {
       {loading ? spinner : (
         <ProviderGrid
           providers={providers}
-          providerStats={stats.providerStats || {}}
+          providerStats={stats.byProvider || {}}
           activeRequests={stats.activeRequests || []}
           lastProvider={stats.recentRequests?.[0]?.provider || ""}
           errorProvider={stats.errorProvider || ""}
@@ -442,16 +442,16 @@ export default function UsageStats() {
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
-          <div className="flex items-center gap-1 bg-bg-subtle rounded-lg p-1 border border-border">
+          <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded-lg p-1 border border-border">
             <button
               onClick={() => setViewMode("costs")}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "costs" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "costs" ? "bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-black/5 dark:hover:bg-white/10"}`}
             >
               Costs
             </button>
             <button
               onClick={() => setViewMode("tokens")}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "tokens" ? "bg-primary text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-bg-hover"}`}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === "tokens" ? "bg-white dark:bg-zinc-700 text-black dark:text-white shadow-sm" : "text-text-muted hover:text-text hover:bg-black/5 dark:hover:bg-white/10"}`}
             >
               Tokens
             </button>

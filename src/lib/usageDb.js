@@ -231,6 +231,7 @@ export async function saveRequestUsage(entry) {
 
   try {
     const db = await getUsageDb();
+    console.log("[DEBUG] saveRequestUsage called with:", JSON.stringify({ provider: entry.provider, model: entry.model, tokens: entry.tokens }));
 
     // Add timestamp if not present
     if (!entry.timestamp) {
@@ -248,6 +249,7 @@ export async function saveRequestUsage(entry) {
     const entryCost = await calculateCost(entry.provider, entry.model, entry.tokens);
     entry.cost = entryCost;
     db.data.history.push(entry);
+    console.log("[DEBUG] History length after push:", db.data.history.length);
     db.data.totalRequestsLifetime += 1;
 
     // Cap history to prevent unbounded memory/disk growth
@@ -257,6 +259,7 @@ export async function saveRequestUsage(entry) {
     }
 
     await db.write();
+    console.log("[DEBUG] db.write() completed");
     statsEmitter.emit("update");
   } catch (error) {
     console.error("Failed to save usage stats:", error);
@@ -447,11 +450,22 @@ export async function getUsageStats(period = "all") {
   const db = await getUsageDb();
   let history = db.data.history || [];
 
+  console.log(`[DEBUG] getUsageStats: total history=${history.length}, period=${period}`);
+
   // Filter history by period
   if (period && PERIOD_MS[period]) {
     const cutoff = Date.now() - PERIOD_MS[period];
+    const beforeFilter = history.length;
     history = history.filter((e) => new Date(e.timestamp).getTime() >= cutoff);
+    console.log(`[DEBUG] getUsageStats: after filter=${history.length} (was ${beforeFilter})`);
   }
+
+  // Count by provider for debug
+  const providerCounts = {};
+  for (const entry of history) {
+    providerCounts[entry.provider] = (providerCounts[entry.provider] || 0) + 1;
+  }
+  console.log("[DEBUG] getUsageStats: provider counts:", providerCounts);
 
   // Import localDb to get provider connection names and API keys
   const { getProviderConnections, getApiKeys, getProviderNodes } = await import("@/lib/localDb.js");

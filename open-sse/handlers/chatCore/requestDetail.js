@@ -43,12 +43,13 @@ export function extractUsageFromResponse(responseBody) {
     };
   }
 
-  // Gemini format
-  if (responseBody.usageMetadata) {
+  // Gemini format (direct or wrapped in response object)
+  const geminiUsage = responseBody.usageMetadata || responseBody.response?.usageMetadata;
+  if (geminiUsage) {
     return {
-      prompt_tokens: responseBody.usageMetadata.promptTokenCount || 0,
-      completion_tokens: responseBody.usageMetadata.candidatesTokenCount || 0,
-      reasoning_tokens: responseBody.usageMetadata.thoughtsTokenCount
+      prompt_tokens: geminiUsage.promptTokenCount || 0,
+      completion_tokens: geminiUsage.candidatesTokenCount || 0,
+      reasoning_tokens: geminiUsage.thoughtsTokenCount
     };
   }
 

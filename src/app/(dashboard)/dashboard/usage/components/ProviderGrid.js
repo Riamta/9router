@@ -58,30 +58,25 @@ function ProviderCard({ provider, stats, isActive, isLast, hasError, activeCount
     <div className={cn(
       "group relative p-5 rounded-2xl border-2 transition-all duration-300",
       "hover:scale-[1.02]",
-      isActive 
-        ? "bg-foreground border-background text-background shadow-[0_0_40px_rgba(255,255,255,0.3)] z-10" 
+      isActive
+        ? "bg-card border-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)] z-10"
         : hasError
-          ? "bg-destructive/10 border-destructive text-foreground"
-          : "bg-card border-border text-foreground hover:border-foreground/50"
+          ? "bg-destructive/10 border-destructive"
+          : "bg-card border-border hover:border-foreground/50"
     )}>
-      {/* Glow effect for active */}
-      {isActive && (
-        <div className="absolute -inset-1 bg-foreground/20 rounded-2xl blur-xl -z-10 animate-pulse" />
-      )}
-
       {/* Status indicator */}
       <div className="absolute top-4 right-4">
         {isActive ? (
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-2">
               <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-background opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-background" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
               </span>
-              <span className="text-xs font-black uppercase tracking-widest">Live</span>
+              <span className="text-xs font-black uppercase tracking-widest text-emerald-500">Live</span>
             </div>
             {activeCount > 0 && (
-              <span className="text-[10px] font-bold text-background/70">
+              <span className="text-[10px] font-bold text-foreground/50">
                 {activeCount} active
               </span>
             )}
@@ -95,37 +90,25 @@ function ProviderCard({ provider, stats, isActive, isLast, hasError, activeCount
 
       {/* Header */}
       <div className="flex items-center gap-4 mb-5">
-        <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
-          isActive ? "bg-background/20" : "bg-accent"
-        )}>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-accent">
           {!imgError ? (
-            <img 
-              src={getProviderImageUrl(provider.provider)} 
+            <img
+              src={getProviderImageUrl(provider.provider)}
               alt={config.name}
-              className={cn("w-8 h-8 rounded object-contain", isActive && "invert")}
+              className="w-8 h-8 rounded object-contain"
               onError={() => setImgError(true)}
             />
           ) : (
-            <span className={cn(
-              "text-lg font-black",
-              isActive ? "text-background" : "text-foreground"
-            )}>
+            <span className="text-lg font-black text-foreground">
               {config.textIcon || provider.provider?.slice(0, 2).toUpperCase()}
             </span>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className={cn(
-            "text-base font-black tracking-wide truncate uppercase",
-            isActive ? "text-background" : "text-foreground"
-          )}>
+          <h3 className="text-base font-black tracking-wide truncate uppercase text-foreground">
             {config.name || provider.name || provider.provider}
           </h3>
-          <p className={cn(
-            "text-xs font-semibold uppercase tracking-wider",
-            isActive ? "text-background/70" : "text-foreground/60"
-          )}>
+          <p className="text-xs font-semibold uppercase tracking-wider text-foreground/60">
             {provider.provider}
           </p>
         </div>
@@ -133,104 +116,36 @@ function ProviderCard({ provider, stats, isActive, isLast, hasError, activeCount
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3">
-        {/* Requests */}
-        <div className={cn(
-          "p-3 rounded-xl",
-          isActive ? "bg-background/10" : "bg-accent/50"
-        )}>
+        <div className="p-3 rounded-xl bg-accent/50">
           <div className="flex items-center gap-2 mb-1">
-            <Activity className={cn(
-              "h-3.5 w-3.5",
-              isActive ? "text-background/70" : "text-foreground/50"
-            )} />
-            <span className={cn(
-              "text-[10px] font-bold uppercase tracking-wider",
-              isActive ? "text-background/70" : "text-foreground/50"
-            )}>
-              Requests
-            </span>
+            <Activity className="h-3.5 w-3.5 text-foreground/50" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/50">Requests</span>
           </div>
-          <p className={cn(
-            "text-xl font-black tracking-tight",
-            isActive ? "text-background" : "text-foreground"
-          )}>
-            {formatNumber(requests)}
-          </p>
+          <p className="text-xl font-black tracking-tight text-foreground">{formatNumber(requests)}</p>
         </div>
 
-        {/* Cost */}
-        <div className={cn(
-          "p-3 rounded-xl",
-          isActive ? "bg-background/10" : "bg-accent/50"
-        )}>
+        <div className="p-3 rounded-xl bg-accent/50">
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className={cn(
-              "h-3.5 w-3.5",
-              isActive ? "text-background/70" : "text-foreground/50"
-            )} />
-            <span className={cn(
-              "text-[10px] font-bold uppercase tracking-wider",
-              isActive ? "text-background/70" : "text-foreground/50"
-            )}>
-              Cost
-            </span>
+            <TrendingUp className="h-3.5 w-3.5 text-foreground/50" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/50">Cost</span>
           </div>
-          <p className={cn(
-            "text-xl font-black tracking-tight",
-            isActive ? "text-background" : "text-foreground"
-          )}>
-            {formatCurrency(cost)}
-          </p>
+          <p className="text-xl font-black tracking-tight text-foreground">{formatCurrency(cost)}</p>
         </div>
 
-        {/* Input Tokens */}
-        <div className={cn(
-          "p-3 rounded-xl",
-          isActive ? "bg-background/10" : "bg-accent/50"
-        )}>
+        <div className="p-3 rounded-xl bg-accent/50">
           <div className="flex items-center gap-2 mb-1">
-            <ArrowUp className={cn(
-              "h-3.5 w-3.5",
-              isActive ? "text-background/70" : "text-foreground/50"
-            )} />
-            <span className={cn(
-              "text-[10px] font-bold uppercase tracking-wider",
-              isActive ? "text-background/70" : "text-foreground/50"
-            )}>
-              Input
-            </span>
+            <ArrowUp className="h-3.5 w-3.5 text-foreground/50" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/50">Input</span>
           </div>
-          <p className={cn(
-            "text-lg font-bold tracking-tight",
-            isActive ? "text-background" : "text-foreground"
-          )}>
-            {formatNumber(stats?.promptTokens || 0)}
-          </p>
+          <p className="text-lg font-bold tracking-tight text-foreground">{formatNumber(stats?.promptTokens || 0)}</p>
         </div>
 
-        {/* Output Tokens */}
-        <div className={cn(
-          "p-3 rounded-xl",
-          isActive ? "bg-background/10" : "bg-accent/50"
-        )}>
+        <div className="p-3 rounded-xl bg-accent/50">
           <div className="flex items-center gap-2 mb-1">
-            <ArrowDown className={cn(
-              "h-3.5 w-3.5",
-              isActive ? "text-background/70" : "text-foreground/50"
-            )} />
-            <span className={cn(
-              "text-[10px] font-bold uppercase tracking-wider",
-              isActive ? "text-background/70" : "text-foreground/50"
-            )}>
-              Output
-            </span>
+            <ArrowDown className="h-3.5 w-3.5 text-foreground/50" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/50">Output</span>
           </div>
-          <p className={cn(
-            "text-lg font-bold tracking-tight",
-            isActive ? "text-background" : "text-foreground"
-          )}>
-            {formatNumber(stats?.completionTokens || 0)}
-          </p>
+          <p className="text-lg font-bold tracking-tight text-foreground">{formatNumber(stats?.completionTokens || 0)}</p>
         </div>
       </div>
 
@@ -238,24 +153,10 @@ function ProviderCard({ provider, stats, isActive, isLast, hasError, activeCount
       {lastUsed && (
         <div className={cn(
           "mt-4 pt-4 border-t flex items-center justify-between",
-          isActive 
-            ? "border-background/20" 
-            : hasError
-              ? "border-destructive/20"
-              : "border-border"
+          hasError ? "border-destructive/20" : "border-border"
         )}>
-          <span className={cn(
-            "text-[10px] font-semibold uppercase tracking-wider",
-            isActive ? "text-background/60" : "text-foreground/50"
-          )}>
-            Last Used
-          </span>
-          <span className={cn(
-            "text-xs font-bold",
-            isActive ? "text-background" : "text-foreground"
-          )}>
-            {timeAgo(lastUsed)}
-          </span>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/50">Last Used</span>
+          <span className="text-xs font-bold text-foreground">{timeAgo(lastUsed)}</span>
         </div>
       )}
     </div>
@@ -334,6 +235,10 @@ export default function ProviderGrid({
   lastProvider = "", 
   errorProvider = "" 
 }) {
+  console.log("[DEBUG] ProviderGrid providers:", providers.map(p => p.provider));
+  console.log("[DEBUG] ProviderGrid providerStats keys:", Object.keys(providerStats));
+  console.log("[DEBUG] ProviderGrid providerStats sample:", JSON.stringify(providerStats).slice(0, 300));
+
   const activeSet = useMemo(
     () => new Set(activeRequests.map((r) => r.provider?.toLowerCase()).filter(Boolean)),
     [activeRequests]
@@ -391,7 +296,7 @@ export default function ProviderGrid({
       />
 
       {/* Provider Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {sortedProviders.map((provider) => {
           const providerKey = provider.provider;
           const providerKeyLower = providerKey?.toLowerCase();
