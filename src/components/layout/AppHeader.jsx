@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,53 +20,55 @@ import {
   LogOut,
   Moon,
   Sun,
-  Zap,
-  Database,
-  Layers,
-  BarChart3,
-  Activity,
-  Shield,
-  Terminal,
-  Settings,
-  Monitor,
-  Server,
   Command,
-  Cpu
+  ChevronRight,
 } from "lucide-react";
 
-const getPageInfo = (pathname) => {
-  if (!pathname) return { title: "", description: "" };
-
-  const routes = {
-    "/dashboard/providers": { title: "Providers", description: "Manage AI providers", icon: Database },
-    "/dashboard/models": { title: "Model Library", description: "Browse all AI models", icon: Cpu },
-    "/dashboard/combos": { title: "Combos", description: "Model combos", icon: Layers },
-    "/dashboard/usage": { title: "Usage", description: "Monitor usage", icon: BarChart3 },
-    "/dashboard/quota": { title: "Quota", description: "Track quota", icon: Activity },
-    "/dashboard/mitm": { title: "MITM", description: "Proxy settings", icon: Shield },
-    "/dashboard/cli-tools": { title: "CLI", description: "CLI tools", icon: Terminal },
-    "/dashboard/proxy-pools": { title: "Proxies", description: "Proxy pools", icon: Server },
-    "/dashboard/endpoint": { title: "Endpoint", description: "API config", icon: Zap },
-    "/dashboard/profile": { title: "Settings", description: "Preferences", icon: Settings },
-    "/dashboard/console-log": { title: "Console", description: "Logs", icon: Monitor },
-    "/dashboard": { title: "Dashboard", description: "Overview", icon: Zap },
-  };
-
-  for (const [route, info] of Object.entries(routes)) {
-    if (pathname.startsWith(route)) return info;
+// Breadcrumb mapping
+const getBreadcrumbs = (pathname) => {
+  const paths = pathname.split("/").filter(Boolean);
+  
+  if (paths.length === 0 || (paths.length === 1 && paths[0] === "dashboard")) {
+    return [
+      { label: "9Router", href: "/dashboard", icon: Command },
+    ];
   }
 
-  return { title: "", description: "" };
+  const crumbs = [{ label: "9Router", href: "/dashboard", icon: Command }];
+  
+  const routeLabels = {
+    endpoint: "Endpoint",
+    providers: "Providers",
+    models: "Models",
+    combos: "Combos",
+    usage: "Usage",
+    quota: "Quota",
+    mitm: "MITM",
+    "cli-tools": "CLI Tools",
+    "proxy-pools": "Proxies",
+    profile: "Settings",
+    "console-log": "Console",
+    translator: "Translator",
+  };
+
+  const lastSegment = paths[paths.length - 1];
+  const label = routeLabels[lastSegment] || lastSegment;
+  
+  crumbs.push({
+    label,
+    href: pathname,
+    active: true,
+  });
+
+  return crumbs;
 };
 
 export function AppHeader({ onMenuClick, className }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const [lang, setLang] = useState("en");
 
-  const pageInfo = useMemo(() => getPageInfo(pathname), [pathname]);
-  const { title, description, icon: Icon } = pageInfo;
+  const breadcrumbs = useMemo(() => getBreadcrumbs(pathname), [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -83,77 +85,104 @@ export function AppHeader({ onMenuClick, className }) {
   return (
     <header
       className={cn(
-        "flex items-center justify-between px-4 py-3 border-b border-border bg-background sticky top-0 z-30",
+        "flex items-center justify-between px-4 h-11 bg-white border-b border-slate-200 sticky top-0 z-30 dark:bg-zinc-900 dark:border-zinc-800",
         className
       )}
     >
-      {/* Left */}
+      {/* Left - Breadcrumbs */}
       <div className="flex items-center gap-3">
+        {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden h-8 w-8 hover:bg-accent"
+          className="lg:hidden h-8 w-8 -ml-1 hover:bg-blue-50 dark:hover:bg-blue-950/30"
           onClick={onMenuClick}
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="h-4 w-4 text-slate-600 dark:text-slate-400" />
         </Button>
 
-        <div className="hidden lg:flex flex-col">
-          {title && (
-            <div className="flex items-center gap-2">
-              {Icon && <Icon className="h-4 w-4 text-foreground stroke-[2.5px]" />}
-              <h1 className="text-xs font-black tracking-[0.2em] uppercase text-foreground">{title}</h1>
-            </div>
-          )}
-          {description && (
-            <p className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">{description}</p>
-          )}
-        </div>
+        {/* Breadcrumbs with colors */}
+        <nav className="flex items-center gap-1 text-sm">
+          {breadcrumbs.map((crumb, index) => {
+            const Icon = crumb.icon;
+            const isLast = index === breadcrumbs.length - 1;
+            
+            return (
+              <div key={crumb.href} className="flex items-center">
+                {index > 0 && (
+                  <ChevronRight className="h-3.5 w-3.5 text-slate-300 mx-1" />
+                )}
+                <Link
+                  href={crumb.href}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200",
+                    isLast
+                      ? "font-semibold text-blue-700 bg-blue-50 dark:text-blue-300 dark:bg-blue-950/30"
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-zinc-800/50"
+                  )}
+                >
+                  {Icon && <Icon className={cn("h-3.5 w-3.5", isLast && "text-blue-500")} />}
+                  <span>{crumb.label}</span>
+                </Link>
+              </div>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Right */}
+      {/* Right - Actions with colorful accents */}
       <div className="flex items-center gap-1">
+        {/* Theme toggle with color */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 hover:bg-accent"
+          className="h-8 w-8 text-slate-500 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
-          <Sun className="h-3.5 w-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-3.5 w-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-amber-500" />
+          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-indigo-400" />
         </Button>
 
+        {/* User menu with colorful avatar */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 hover:bg-accent rounded-lg">
-              <Avatar className="h-6 w-6 rounded-md">
-                <AvatarFallback className="bg-foreground text-background text-[10px] font-bold rounded-md">
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0 ml-1 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+            >
+              <Avatar className="h-7 w-7 rounded-lg ring-2 ring-blue-100 dark:ring-blue-900/50">
+                <AvatarFallback className="bg-blue-500 text-white text-[10px] font-bold rounded-lg">
                   9R
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-52 bg-background border-border rounded-xl shadow-2xl" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal py-3">
+          <DropdownMenuContent
+            className="w-48 bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl"
+            align="end"
+            forceMount
+          >
+            <DropdownMenuLabel className="font-normal py-3 px-3">
               <div className="flex flex-col space-y-1">
-                <p className="text-xs font-black text-foreground uppercase tracking-widest">Admin</p>
-                <p className="text-[11px] font-semibold text-foreground/60">9Router</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Admin
+                </p>
+                <p className="text-xs text-slate-400">9Router</p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem asChild className="text-xs font-semibold hover:bg-accent cursor-pointer rounded-lg py-2.5">
-              <Link href="/dashboard/profile">
-                <Settings className="mr-2 h-4 w-4" />
-                SETTINGS
-              </Link>
+            <DropdownMenuSeparator className="bg-slate-100 dark:bg-zinc-800" />
+            <DropdownMenuItem
+              asChild
+              className="text-sm cursor-pointer rounded-lg py-2 mx-1 hover:bg-blue-50 text-slate-700 dark:hover:bg-blue-950/30 dark:text-slate-300"
+            >
+              <Link href="/dashboard/profile">Settings</Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-border" />
+            <DropdownMenuSeparator className="bg-slate-100 dark:bg-zinc-800" />
             <DropdownMenuItem
               onClick={handleLogout}
-              className="text-destructive font-semibold hover:bg-destructive/10 hover:text-destructive text-xs cursor-pointer rounded-lg py-2.5"
+              className="text-red-500 text-sm cursor-pointer rounded-lg py-2 mx-1 hover:bg-red-50 dark:hover:bg-red-950/20"
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              LOGOUT
+              Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

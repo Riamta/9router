@@ -29,6 +29,7 @@ export { default as IFlowCookieModal } from "./IFlowCookieModal";
 export { default as GitLabAuthModal } from "./GitLabAuthModal";
 export { default as SegmentedControl } from "./SegmentedControl";
 export { default as Tooltip } from "./Tooltip";
+export { default as TabButton, BlackButton, OutlineButton } from "./TabButton";
 
 // Layouts
 export * from "./layouts";

@@ -425,6 +425,7 @@ export default function UsageStats() {
               activeRequests={stats.activeRequests || []}
               lastProvider={stats.recentRequests?.[0]?.provider || ""}
               errorProvider={stats.errorProvider || ""}
+              byProvider={stats.byProvider || {}}
             />
           </div>
           <div className="xl:col-span-1">

@@ -3,94 +3,124 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ========================================
-   PURE BLACK/WHITE THEME - NO COLORS
+   COLORFUL LINEAR-INSPIRED THEME
    ======================================== */
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   
-  /* Pure black background */
-  --background: #000000;
-  --foreground: #ffffff;
+  /* Primary Accent - Soft Blue */
+  --accent-blue: #3b82f6;
+  --accent-blue-light: #60a5fa;
+  --accent-blue-soft: #dbeafe;
   
-  /* Card - Dark gray */
-  --card: #111111;
-  --card-foreground: #ffffff;
+  /* Secondary Accents */
+  --accent-green: #22c55e;
+  --accent-green-light: #86efac;
+  --accent-green-soft: #dcfce7;
   
-  /* Popover */
-  --popover: #111111;
-  --popover-foreground: #ffffff;
+  --accent-yellow: #f59e0b;
+  --accent-yellow-light: #fcd34d;
+  --accent-yellow-soft: #fef3c7;
   
-  /* Primary - Pure white */
-  --primary: #ffffff;
-  --primary-foreground: #000000;
+  --accent-purple: #8b5cf6;
+  --accent-purple-light: #c4b5fd;
+  --accent-purple-soft: #ede9fe;
   
-  /* Secondary - Darker gray */
-  --secondary: #1a1a1a;
-  --secondary-foreground: #ffffff;
+  --accent-pink: #ec4899;
+  --accent-pink-light: #f9a8d4;
+  --accent-pink-soft: #fce7f3;
   
-  /* Muted - Brighter for better contrast */
-  --muted: #1a1a1a;
-  --muted-foreground: #a0a0a0;
+  --accent-orange: #f97316;
+  --accent-orange-soft: #ffedd5;
   
-  /* Accent - Brighter gray */
-  --accent: #222222;
-  --accent-foreground: #ffffff;
+  /* Background */
+  --background: #fafafa;
+  --foreground: #18181b;
   
-  /* Destructive - Bright red */
-  --destructive: #ff3333;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  
+  /* Primary - Blue accent */
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #f4f4f5;
+  --secondary-foreground: #52525b;
+  
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  
+  --accent: #eff6ff;
+  --accent-foreground: #1e40af;
+  
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   
-  /* Borders - More visible */
-  --border: #333333;
-  --input: #333333;
-  --ring: #ffffff;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #3b82f6;
   
   /* Sidebar */
-  --sidebar: #000000;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #222222;
-  --sidebar-ring: #ffffff;
-}
-
-/* Light theme */
-.light {
-  --background: #ffffff;
-  --foreground: #000000;
-  --card: #fafafa;
-  --card-foreground: #000000;
-  --popover: #ffffff;
-  --popover-foreground: #000000;
-  --primary: #000000;
-  --primary-foreground: #ffffff;
-  --secondary: #f5f5f5;
-  --secondary-foreground: #000000;
-  --muted: #f5f5f5;
-  --muted-foreground: #666666;
-  --accent: #eeeeee;
-  --accent-foreground: #000000;
-  --destructive: #ff4444;
-  --destructive-foreground: #ffffff;
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #000000;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #000000;
-  --sidebar-primary: #000000;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #475569;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f5f5f5;
-  --sidebar-accent-foreground: #000000;
-  --sidebar-border: #e5e5e5;
-  --sidebar-ring: #000000;
+  --sidebar-accent: #eff6ff;
+  --sidebar-accent-foreground: #1e40af;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #3b82f6;
+  
+  /* Status Colors */
+  --status-backlog: #8b5cf6;
+  --status-todo: #f59e0b;
+  --status-in-progress: #eab308;
+  --status-done: #22c55e;
+  --status-canceled: #ef4444;
 }
 
-/* ========================================
-   TAILWIND v4 THEME MAPPING
-   ======================================== */
+/* Dark theme */
+.dark {
+  --background: #0f0f10;
+  --foreground: #fafafa;
+  
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  
+  --primary: #60a5fa;
+  --primary-foreground: #0f172a;
+  
+  --secondary: #27272a;
+  --secondary-foreground: #a1a1aa;
+  
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  
+  --accent: #1e3a5f;
+  --accent-foreground: #93c5fd;
+  
+  --destructive: #f87171;
+  --destructive-foreground: #fafafa;
+  
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #60a5fa;
+  
+  --sidebar: #18181b;
+  --sidebar-foreground: #a1a1aa;
+  --sidebar-primary: #60a5fa;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #1e3a5f;
+  --sidebar-accent-foreground: #93c5fd;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #60a5fa;
+}
 
 @theme {
   --color-background: var(--background);
@@ -127,12 +157,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
-
-/* ========================================
-   BASE STYLES
-   ======================================== */
 
 * {
   border-color: var(--border);
@@ -147,21 +173,17 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-/* Selection - White on black */
 ::selection {
-  background-color: var(--foreground);
-  color: var(--background);
+  background-color: var(--accent-blue);
+  color: var(--primary-foreground);
 }
-
-/* ========================================
-   SCROLLBAR - Thin black/white
-   ======================================== */
 
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -174,7 +196,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--muted-foreground);
+  background-color: var(--accent-blue);
 }
 
 .scrollbar-thin {
@@ -182,24 +204,102 @@ body {
   scrollbar-color: var(--border) transparent;
 }
 
-/* ========================================
-   ANIMATIONS
-   ======================================== */
-
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .animate-fade-in {
-  animation: fade-in 300ms ease-out;
+  animation: fade-in 150ms ease-out;
 }
 
 .animate-slide-up {
-  animation: slide-up 300ms ease-out;
+  animation: slide-up 150ms ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.status-badge {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+}
+
+.status-backlog {
+  background-color: var(--accent-purple-soft);
+  color: var(--accent-purple);
+}
+
+.status-todo {
+  background-color: var(--accent-yellow-soft);
+  color: #92400e;
+}
+
+.status-in-progress {
+  background-color: var(--accent-yellow-soft);
+  color: var(--accent-yellow);
+}
+
+.status-done {
+  background-color: var(--accent-green-soft);
+  color: #166534;
+}
+
+.status-canceled {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-dot-backlog {
+  background-color: var(--accent-purple);
+}
+
+.status-dot-todo {
+  background-color: var(--accent-yellow);
+}
+
+.status-dot-in-progress {
+  background-color: var(--accent-yellow);
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.status-dot-done {
+  background-color: var(--accent-green);
+}
+
+.card-hover {
+  @apply transition-all duration-150 ease-out;
+}
+
+.card-hover:hover {
+  border-color: var(--accent-blue);
+}
+
+.priority-high {
+  color: var(--accent-orange);
+  background-color: var(--accent-orange-soft);
+}
+
+.priority-medium {
+  color: var(--accent-blue);
+  background-color: var(--accent-blue-soft);
+}
+
+.priority-low {
+  color: var(--accent-green);
+  background-color: var(--accent-green-soft);
 }

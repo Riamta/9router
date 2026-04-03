@@ -8,13 +8,13 @@ import { AppHeader } from "./AppHeader";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
-// Simple toast notification component
+// Linear-style toast notification
 function Toast({ notification, onDismiss }) {
   const styles = {
-    success: "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400",
-    error: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400",
-    warning: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-    info: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    success: "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400",
+    error: "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400",
+    warning: "border-yellow-500/20 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
+    info: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400",
   };
 
   const icons = {
@@ -27,22 +27,24 @@ function Toast({ notification, onDismiss }) {
   return (
     <div
       className={cn(
-        "rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm flex items-start gap-3",
+        "rounded-lg border px-3 py-2.5 shadow-lg flex items-start gap-2 animate-slide-up",
         styles[notification.type] || styles.info
       )}
     >
-      <span className="text-lg">{icons[notification.type] || icons.info}</span>
+      <span className="text-sm leading-5">{icons[notification.type] || icons.info}</span>
       <div className="flex-1 min-w-0">
         {notification.title && (
-          <p className="text-sm font-semibold mb-0.5">{notification.title}</p>
+          <p className="text-sm font-medium leading-5 mb-0.5">{notification.title}</p>
         )}
-        <p className="text-sm whitespace-pre-wrap break-words">{notification.message}</p>
+        <p className="text-sm leading-5 whitespace-pre-wrap break-words opacity-90">
+          {notification.message}
+        </p>
       </div>
       {notification.dismissible && (
         <Button
           variant="ghost"
           size="icon"
-          className="h-4 w-4 shrink-0 -mr-1 -mt-1"
+          className="h-5 w-5 shrink-0 -mr-1 -mt-0.5 opacity-60 hover:opacity-100"
           onClick={() => onDismiss(notification.id)}
         >
           <X className="h-3 w-3" />
@@ -58,8 +60,8 @@ export function AppLayout({ children, notifications = [], onDismissNotification 
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* Toast Notifications */}
-      <div className="fixed top-4 right-4 z-[80] flex w-[min(92vw,380px)] flex-col gap-2">
+      {/* Toast Notifications - Linear style positioning */}
+      <div className="fixed top-4 right-4 z-[80] flex w-[min(92vw,320px)] flex-col gap-2">
         {notifications.map((n) => (
           <Toast key={n.id} notification={n} onDismiss={onDismissNotification} />
         ))}
@@ -68,7 +70,7 @@ export function AppLayout({ children, notifications = [], onDismissNotification 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -81,7 +83,7 @@ export function AppLayout({ children, notifications = [], onDismissNotification 
       {/* Sidebar - Mobile */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 transform lg:hidden transition-transform duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 transform lg:hidden transition-transform duration-200 ease-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -93,8 +95,8 @@ export function AppLayout({ children, notifications = [], onDismissNotification 
         <AppHeader onMenuClick={() => setSidebarOpen(true)} />
         <div
           className={cn(
-            "flex-1 overflow-y-auto custom-scrollbar",
-            pathname === "/dashboard/basic-chat" ? "" : "p-6"
+            "flex-1 overflow-y-auto bg-background",
+            pathname === "/dashboard/basic-chat" ? "" : "p-5"
           )}
         >
           <div
