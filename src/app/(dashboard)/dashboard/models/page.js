@@ -13,7 +13,7 @@ export default function ModelsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProvider, setSelectedProvider] = useState("all");
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
   const [providers, setProviders] = useState([]);
   
   // Custom prices state (provider -> model -> price)
@@ -272,12 +272,13 @@ export default function ModelsPage() {
           {viewMode === "list" ? (
             <Card padding="none" className="overflow-hidden">
               {/* Table Header */}
-              <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border bg-accent/30">
-                <div className="col-span-4">Name</div>
-                <div className="col-span-2 text-right">Input</div>
-                <div className="col-span-2 text-right">Output</div>
-                <div className="col-span-2 text-right">Context</div>
-                <div className="col-span-2 text-right">Provider</div>
+              <div className="grid grid-cols-[3fr_1.5fr_1.5fr_1.5fr_1.5fr_auto] gap-4 px-4 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border bg-accent/30">
+                <div>Name</div>
+                <div className="text-center">Input</div>
+                <div className="text-center">Output</div>
+                <div className="text-center">Context</div>
+                <div className="text-center">Provider</div>
+                <div className="w-16 text-center">Action</div>
               </div>
               {/* Table Rows */}
               <div className="flex flex-col">
@@ -396,9 +397,9 @@ function ModelCard({ model, viewMode, formatPrice, getPrice, onEdit, hasCustomPr
 
   if (viewMode === "list") {
     return (
-      <div className="grid grid-cols-12 gap-4 px-4 py-3 items-center border-b border-border hover:bg-accent/50 transition-colors group">
+      <div className="grid grid-cols-[3fr_1.5fr_1.5fr_1.5fr_1.5fr_auto] gap-4 px-4 py-3 items-center border-b border-border hover:bg-accent/50 transition-colors group">
         {/* Name */}
-        <div className="col-span-4 flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <h3 className="text-sm font-bold text-foreground truncate">{model.id}</h3>
           {hasCustomPrice && (
             <Badge variant="outline" size="sm" className="border-primary text-primary text-[10px] shrink-0">
@@ -406,44 +407,43 @@ function ModelCard({ model, viewMode, formatPrice, getPrice, onEdit, hasCustomPr
             </Badge>
           )}
         </div>
-        
+
         {/* Input */}
-        <div className="col-span-2 text-right">
-          <button
-            onClick={() => onEdit(model)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-accent transition-colors group/price"
-          >
-            <span className="text-sm font-bold text-foreground">{formatPrice(inputPrice)}</span>
-            <Edit2 className="h-3 w-3 opacity-0 group-hover/price:opacity-100 transition-opacity text-muted-foreground" />
-          </button>
+        <div className="text-center">
+          <span className="text-sm font-bold text-foreground tabular-nums">{formatPrice(inputPrice)}</span>
         </div>
-        
+
         {/* Output */}
-        <div className="col-span-2 text-right">
-          <button
-            onClick={() => onEdit(model)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-accent transition-colors group/price"
-          >
-            <span className="text-sm font-bold text-foreground">{formatPrice(outputPrice)}</span>
-            <Edit2 className="h-3 w-3 opacity-0 group-hover/price:opacity-100 transition-opacity text-muted-foreground" />
-          </button>
+        <div className="text-center">
+          <span className="text-sm font-bold text-foreground tabular-nums">{formatPrice(outputPrice)}</span>
         </div>
-        
+
         {/* Context */}
-        <div className="col-span-2 text-right text-sm text-foreground">
-          {typeof model.contextWindow === "number" && !isNaN(model.contextWindow) 
-            ? `${(model.contextWindow / 1000).toFixed(0)}K` 
+        <div className="text-center text-sm text-foreground">
+          {typeof model.contextWindow === "number" && !isNaN(model.contextWindow)
+            ? `${(model.contextWindow / 1000).toFixed(0)}K`
             : "Unknown"}
         </div>
-        
+
         {/* Provider */}
-        <div className="col-span-2 text-right">
-          <Badge 
-            variant={inputPrice === 0 && outputPrice === 0 ? "success" : "default"} 
+        <div className="text-center">
+          <Badge
+            variant={inputPrice === 0 && outputPrice === 0 ? "success" : "default"}
             size="sm"
           >
             {model.provider}
           </Badge>
+        </div>
+
+        {/* Action */}
+        <div className="w-16 flex justify-center">
+          <button
+            onClick={() => onEdit(model)}
+            className="p-1.5 rounded-lg hover:bg-accent border border-transparent hover:border-border transition-colors opacity-0 group-hover:opacity-100"
+            title="Edit pricing"
+          >
+            <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
         </div>
       </div>
     );
