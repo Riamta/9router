@@ -1,7 +1,7 @@
 import { FORMATS } from "../../translator/formats.js";
 import { needsTranslation } from "../../translator/index.js";
 import { ollamaBodyToOpenAI } from "../../translator/response/ollama-to-openai.js";
-import { addBufferToUsage, filterUsageForFormat } from "../../utils/usageTracking.js";
+import { addBufferToUsage, filterUsageForFormat, estimateUsage } from "../../utils/usageTracking.js";
 import { createErrorResult } from "../../utils/error.js";
 import { HTTP_STATUS } from "../../config/runtimeConfig.js";
 import { parseSSEToOpenAIResponse } from "./sseToJsonHandler.js";
@@ -154,7 +154,22 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
   reqLogger.logProviderResponse(providerResponse.status, providerResponse.statusText, providerResponse.headers, responseBody);
   if (onRequestSuccess) await onRequestSuccess();
 
-  const usage = extractUsageFromResponse(responseBody);
+  let usage = extractUsageFromResponse(responseBody);
+  
+  // Estimate usage if provider doesn't return it (common for openai-compatible and cloud providers)
+  if (!usage || (!usage.prompt_tokens && !usage.input_tokens)) {
+    const message = responseBody?.choices?.[0]?.message;
+    const content = message?.content || message?.text || "";
+    const reasoningContent = message?.reasoning_content || "";
+    const totalContentLength = content.length + reasoningContent.length;
+    
+    if (totalContentLength > 0) {
+      console.log(`[DEBUG] No usage from provider ${provider}, estimating from content length: ${totalContentLength}`);
+      usage = estimateUsage(body, totalContentLength, FORMATS.OPENAI);
+      usage.estimated = true;  // Mark as estimated
+    }
+  }
+  
   console.log(`[DEBUG] Extracted usage for ${provider}:`, usage);
   console.log(`[DEBUG] Response body keys:`, Object.keys(responseBody || {}));
   console.log(`[DEBUG] Response body sample:`, JSON.stringify(responseBody).slice(0, 300));
