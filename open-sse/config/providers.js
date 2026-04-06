@@ -214,10 +214,31 @@ export const PROVIDERS = {
     format: "openai",
     headers: {}
   },
-  opencode: {
-    baseUrl: "http://localhost:4096/v1/chat/completions",
+  // OpenCode - Split into two tiers like OmniRoute
+  "opencode-zen": {
+    baseUrl: "https://opencode.ai/zen/v1/chat/completions",
     format: "openai",
-    headers: {}
+    headers: {},
+    models: [
+      { id: "minimax-m2.5-free", name: "MiniMax M2.5 Free" },
+      { id: "big-pickle", name: "Big Pickle" },
+      { id: "nano-pickle", name: "Nano Pickle" },
+      { id: "qwen3-coder-plus", name: "Qwen3 Coder Plus" },
+      { id: "qwen3-coder-flash", name: "Qwen3 Coder Flash" },
+      { id: "deepseek-r1", name: "DeepSeek R1" },
+    ]
+  },
+  "opencode-go": {
+    baseUrl: "https://opencode.ai/zen/go/v1/chat/completions",
+    testKeyBaseUrl: "https://opencode.ai/zen/v1", // Key validation uses zen endpoint
+    format: "openai",
+    headers: {},
+    models: [
+      { id: "glm-5", name: "GLM-5" },
+      { id: "kimi-k2.5", name: "Kimi K2.5" },
+      { id: "minimax-m2.7", name: "MiniMax M2.7", targetFormat: "claude" },
+      { id: "minimax-m2.5", name: "MiniMax M2.5", targetFormat: "claude" },
+    ]
   },
   cline: {
     baseUrl: "https://api.cline.bot/api/v1/chat/completions",

@@ -36,12 +36,15 @@ import {
   Activity,
   Cpu,
   Command,
+  LayoutDashboard,
+  Key,
 } from "lucide-react";
 
 // Navigation - simple black text
 const mainNavItems = [
-  { href: "/dashboard/endpoint", label: "Endpoint", icon: Zap },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/providers", label: "Providers", icon: Database },
+  { href: "/dashboard/api-keys", label: "API Keys", icon: Key },
   { href: "/dashboard/models", label: "Models", icon: Cpu },
   { href: "/dashboard/combos", label: "Combos", icon: Layers },
 ];
@@ -88,8 +91,11 @@ export function AppSidebar({ onClose, className }) {
   }, []);
 
   const isActive = (href) => {
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
     if (href === "/dashboard/endpoint") {
-      return pathname === "/dashboard" || pathname.startsWith("/dashboard/endpoint");
+      return pathname.startsWith("/dashboard/endpoint");
     }
     return pathname.startsWith(href);
   };
@@ -168,7 +174,7 @@ export function AppSidebar({ onClose, className }) {
                 <Command className="h-4 w-4" />
               </div>
               <span className="text-sm font-bold text-black dark:text-white">
-                9Router
+                Api2K
               </span>
             </Link>
           </div>

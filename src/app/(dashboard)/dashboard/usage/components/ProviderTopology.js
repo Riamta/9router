@@ -38,12 +38,12 @@ function ProviderCard({ provider, active, last, error, stats }) {
   let iconImgClass = "";
 
   if (active) {
-    borderClass = "border-foreground";
-    bgClass = "bg-foreground";
-    textClass = "text-background";
-    mutedClass = "text-background/60";
-    iconBgClass = "bg-background/20";
-    iconImgClass = "invert";
+    borderClass = "border-emerald-500 animate-pulse-border";
+    bgClass = "bg-card";
+    textClass = "text-foreground";
+    mutedClass = "text-muted-foreground";
+    iconBgClass = "bg-emerald-500/10 ring-1 ring-emerald-500/30";
+    iconImgClass = "";
   } else if (error) {
     borderClass = "border-red-500/60";
   } else if (last) {
@@ -61,7 +61,7 @@ function ProviderCard({ provider, active, last, error, stats }) {
         flex flex-col gap-1.5 px-3 py-2 rounded-xl border-2
         transition-all duration-300
         ${bgClass} ${borderClass} ${textClass}
-        ${active ? "shadow-lg shadow-foreground/20" : ""}
+        ${active ? "shadow-[0_0_8px_rgba(16,185,129,0.15)]" : ""}
         ${!active ? "hover:border-foreground/40" : ""}
       `}
     >
@@ -79,7 +79,7 @@ function ProviderCard({ provider, active, last, error, stats }) {
             />
           ) : (
             <span
-              className={`text-xs font-bold ${active ? "text-background" : "text-foreground"}`}
+              className={`text-xs font-bold ${active ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}
             >
               {textIcon}
             </span>
@@ -92,8 +92,8 @@ function ProviderCard({ provider, active, last, error, stats }) {
 
         {active && (
           <span className="relative flex h-2.5 w-2.5 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-background opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-background" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
           </span>
         )}
         {error && !active && (
@@ -173,9 +173,9 @@ export default function ProviderTopology({
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-foreground text-background">
-          <img src="/favicon.svg" alt="9Router" className="w-5 h-5 invert" />
+          <img src="/favicon.svg" alt="Api2K" className="w-5 h-5 invert" />
           <span className="text-sm font-black tracking-widest uppercase">
-            9Router
+            Api2K
           </span>
           {activeCount > 0 && (
             <span className="ml-1 px-2 py-0.5 rounded-md bg-background text-foreground text-xs font-black">

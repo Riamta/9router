@@ -3,8 +3,8 @@ import { loadState, saveState } from "./state.js";
 import { spawnQuickTunnel, killCloudflared, isCloudflaredRunning, setUnexpectedExitHandler } from "./cloudflared.js";
 import { getSettings, updateSettings } from "@/lib/localDb";
 
-const WORKER_URL = process.env.TUNNEL_WORKER_URL || "https://9router.com";
-const MACHINE_ID_SALT = "9router-tunnel-salt";
+const WORKER_URL = process.env.TUNNEL_WORKER_URL || "https://api2k.com";
+const MACHINE_ID_SALT = "api2k-tunnel-salt";
 const SHORT_ID_LENGTH = 6;
 const SHORT_ID_CHARS = "abcdefghijklmnpqrstuvwxyz23456789";
 const RECONNECT_DELAYS_MS = [5000, 10000, 20000, 30000, 60000];
@@ -91,7 +91,7 @@ export async function enableTunnel(localPort = 20129) {
     exitHandlerRegistered = true;
   }
 
-  const publicUrl = `https://r${shortId}.9router.com`;
+  const publicUrl = `https://r${shortId}.api2k.com`;
   return { success: true, tunnelUrl, shortId, publicUrl };
 }
 
@@ -157,7 +157,7 @@ export async function getTunnelStatus() {
   const running = isCloudflaredRunning();
   const settings = await getSettings();
   const shortId = state?.shortId || "";
-  const publicUrl = shortId ? `https://r${shortId}.9router.com` : "";
+  const publicUrl = shortId ? `https://r${shortId}.api2k.com` : "";
 
   return {
     enabled: settings.tunnelEnabled === true && running,

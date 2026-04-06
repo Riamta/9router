@@ -2,8 +2,8 @@ import pkg from "../../../package.json" with { type: "json" };
 
 // App configuration
 export const APP_CONFIG = {
-  name: "Endpoint Proxy",
-  description: "AI Infrastructure Management",
+  name: "Api2K",
+  description: "Universal AI Gateway",
   version: pkg.version,
 };
 
@@ -48,20 +48,40 @@ export const PROVIDER_ENDPOINTS = {
   anthropic: "https://api.anthropic.com/v1/messages",
   gemini: "https://generativelanguage.googleapis.com/v1beta/models",
   ollama: "https://ollama.com/api/chat",
+  deepseek: "https://api.deepseek.com/v1/chat/completions",
+  groq: "https://api.groq.com/openai/v1/chat/completions",
+  xai: "https://api.x.ai/v1/chat/completions",
+  mistral: "https://api.mistral.ai/v1/chat/completions",
+  perplexity: "https://api.perplexity.ai/chat/completions",
+  together: "https://api.together.xyz/v1/chat/completions",
+  fireworks: "https://api.fireworks.ai/inference/v1/chat/completions",
+  cerebras: "https://api.cerebras.ai/v1/chat/completions",
+  cohere: "https://api.cohere.com/v2/chat",
+  nebius: "https://api.studio.nebius.ai/v1/chat/completions",
+  siliconflow: "https://api.siliconflow.cn/v1/chat/completions",
+  hyperbolic: "https://api.hyperbolic.xyz/v1/chat/completions",
+  deepgram: "https://api.deepgram.com/v1/speak",
+  assemblyai: "https://api.assemblyai.com/v2/transcript",
+  nanobanana: "https://api.nanobananaapi.ai/v1/images/generations",
+  chutes: "https://api.chutes.ai/v1/chat/completions",
+  vertex: "https://us-central1-aiplatform.googleapis.com/v1/projects/{projectId}/locations/us-central1/publishers/google/models",
+  "vertex-partner": "https://us-central1-aiplatform.googleapis.com/v1/projects/{projectId}/locations/us-central1/publishers/anthropic/models",
   "ollama-local": "http://localhost:11434/api/chat",
 };
 
 // Re-export from providers.js for backward compatibility
 export {
+  AI_PROVIDERS,
   FREE_PROVIDERS,
+  FREE_TIER_PROVIDERS,
   OAUTH_PROVIDERS,
   APIKEY_PROVIDERS,
-  AI_PROVIDERS,
   AUTH_METHODS,
+  isOpenAICompatibleProvider,
+  isAnthropicCompatibleProvider,
+  getProviderAlias,
+  resolveProviderId,
+  getProviderByAlias,
+  OPENAI_COMPATIBLE_PREFIX,
+  ANTHROPIC_COMPATIBLE_PREFIX,
 } from "./providers.js";
-
-// Re-export from models.js for backward compatibility
-export {
-  PROVIDER_MODELS,
-  AI_MODELS,
-} from "./models.js";

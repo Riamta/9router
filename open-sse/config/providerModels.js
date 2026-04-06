@@ -143,13 +143,27 @@ export const PROVIDER_MODELS = {
     { id: "deepseek/deepseek-reasoner", name: "DeepSeek Reasoner" },
   ],
   cl: [  // Cline
-    { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6" },
+    { id: "anthropic/claude_sonnet-4.6", name: "Claude Sonnet 4.6" },
     { id: "anthropic/claude-opus-4.6", name: "Claude Opus 4.6" },
     { id: "openai/gpt-5.3-codex", name: "GPT-5.3 Codex" },
     { id: "openai/gpt-5.4", name: "GPT-5.4" },
     { id: "google/gemini-3.1-pro-preview", name: "Gemini 3.1 Pro Preview" },
     { id: "google/gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite Preview" },
     { id: "kwaipilot/kat-coder-pro", name: "KAT Coder Pro" },
+  ],
+  oz: [  // OpenCode Zen (Free tier)
+    { id: "minimax-m2.5-free", name: "MiniMax M2.5 Free" },
+    { id: "big-pickle", name: "Big Pickle" },
+    { id: "nano-pickle", name: "Nano Pickle" },
+    { id: "qwen3-coder-plus", name: "Qwen3 Coder Plus" },
+    { id: "qwen3-coder-flash", name: "Qwen3 Coder Flash" },
+    { id: "deepseek-r1", name: "DeepSeek R1" },
+  ],
+  og: [  // OpenCode Go (Paid tier)
+    { id: "glm-5", name: "GLM-5" },
+    { id: "kimi-k2.5", name: "Kimi K2.5" },
+    { id: "minimax-m2.7", name: "MiniMax M2.7", targetFormat: "claude" },
+    { id: "minimax-m2.5", name: "MiniMax M2.5", targetFormat: "claude" },
   ],
 
   // API Key Providers (alias = id)
@@ -407,6 +421,8 @@ const OAUTH_ALIASES = {
   cline: "cl",
   vertex: "vertex",
   "vertex-partner": "vertex-partner",
+  "opencode-zen": "oz",
+  "opencode-go": "og",
 };
 
 // Derived from PROVIDERS — no need to maintain manually

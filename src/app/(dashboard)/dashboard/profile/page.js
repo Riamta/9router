@@ -243,13 +243,13 @@ export default function ProfilePage() {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enableObservability: enabled }),
+        body: JSON.stringify({ observabilityEnabled: enabled }),
       });
       if (res.ok) {
-        setSettings(prev => ({ ...prev, enableObservability: enabled }));
+        setSettings(prev => ({ ...prev, observabilityEnabled: enabled }));
       }
     } catch (err) {
-      console.error("Failed to update enableObservability:", err);
+      console.error("Failed to update observabilityEnabled:", err);
     }
   };
 
@@ -281,7 +281,7 @@ export default function ProfilePage() {
       const anchor = document.createElement("a");
       const stamp = new Date().toISOString().replace(/[.:]/g, "-");
       anchor.href = url;
-      anchor.download = `9router-backup-${stamp}.json`;
+      anchor.download = `api2k-backup-${stamp}.json`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
@@ -329,7 +329,7 @@ export default function ProfilePage() {
     }
   };
 
-  const observabilityEnabled = settings.enableObservability === true;
+  const observabilityEnabled = settings.observabilityEnabled !== false;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -371,7 +371,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between p-3 rounded-lg bg-bg border border-border">
               <div>
                 <p className="font-medium">Database Location</p>
-                <p className="text-sm text-text-muted font-mono">~/.9router/db.json</p>
+                <p className="text-sm text-text-muted font-mono">~/.api2k/db.json</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">

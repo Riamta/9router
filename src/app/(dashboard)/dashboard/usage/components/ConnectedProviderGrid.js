@@ -82,7 +82,7 @@ function HubHeader({ providers, totalCost, totalTokens, activeCount }) {
         </div>
         <div className="flex flex-col leading-none">
           <span className="text-xs font-black tracking-widest uppercase text-foreground">
-            9Router
+            Api2K
           </span>
           <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
             {activeCount > 0 ? `${activeCount} active` : "routing hub"}
@@ -175,7 +175,7 @@ function StatCell({ icon, label, value, large = false }) {
   return (
     <div className="p-2.5 rounded-lg bg-accent/50">
       <div className="flex items-center gap-1.5 mb-1">
-        <span className="text-muted-foreground/70 shrink-0">{icon}</span>
+        <span className="shrink-0">{icon}</span>
         <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
           {label}
         </span>
@@ -217,14 +217,17 @@ function ProviderCard({
     <div className={cn(
       "relative rounded-xl border transition-all duration-200 overflow-hidden bg-card p-4",
       isActive
-        ? "border-foreground/35 ring-1 ring-foreground/15 shadow-sm"
+        ? "border-emerald-500 shadow-[0_0_0_1px_rgba(16,185,129,0.3)] animate-pulse-border"
         : hasError
           ? "border-destructive/40 bg-destructive/5"
           : "border-border hover:border-foreground/25 hover:shadow-sm"
     )}>
-      {/* Left accent bar for active state */}
+      {/* Animated green border glow for active state */}
       {isActive && (
-        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-foreground rounded-r-sm" />
+        <>
+          <div className="absolute inset-0 rounded-xl border-2 border-emerald-500/50 animate-ping-slow pointer-events-none" />
+          <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-emerald-500/20 via-transparent to-emerald-500/20 opacity-50 animate-pulse-slow pointer-events-none" />
+        </>
       )}
 
       {/* Header */}
@@ -234,7 +237,7 @@ function ProviderCard({
           <div className={cn(
             "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
             isActive
-              ? "bg-foreground/[0.07] ring-1 ring-foreground/15"
+              ? "bg-emerald-500/10 ring-1 ring-emerald-500/30"
               : "bg-accent"
           )}>
             {!imgError ? (
@@ -285,29 +288,46 @@ function ProviderCard({
           large
         />
         <StatCell
-          icon={<ArrowUp className="h-3 w-3" />}
+          icon={<div className="text-sky-500"><ArrowUp className="h-3 w-3" /></div>}
           label="Input"
           value={formatNumber(stats?.promptTokens || 0)}
         />
         <StatCell
-          icon={<ArrowDown className="h-3 w-3" />}
+          icon={<div className="text-amber-500"><ArrowDown className="h-3 w-3" /></div>}
           label="Output"
           value={formatNumber(stats?.completionTokens || 0)}
         />
       </div>
 
       {/* Footer */}
-      {lastUsed && (
+      {(lastUsed || cost > 0) && (
         <div className={cn(
           "mt-3 pt-3 border-t flex items-center justify-between",
           hasError ? "border-destructive/20" : "border-border"
         )}>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Last Used
-          </span>
-          <span className="text-xs font-bold text-foreground">
-            {timeAgo(lastUsed)}
-          </span>
+          {lastUsed ? (
+            <div className="flex flex-col">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Last Used
+              </span>
+              <span className="text-xs font-bold text-foreground">
+                {timeAgo(lastUsed)}
+              </span>
+            </div>
+          ) : (
+            <div />
+          )}
+          
+          {cost > 0 && (
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Cost
+              </span>
+              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(cost)}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -411,7 +431,7 @@ export default function ConnectedProviderGrid({
           </div>
           <h3 className="text-sm font-bold text-foreground mb-1">No Providers Connected</h3>
           <p className="text-xs text-muted-foreground max-w-xs">
-            Add providers to start routing requests through 9Router.
+            Add providers to start routing requests through Api2K.
           </p>
         </div>
       )}

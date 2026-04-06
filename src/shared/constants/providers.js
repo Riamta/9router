@@ -17,6 +17,7 @@ export const FREE_TIER_PROVIDERS = {
   nvidia: { id: "nvidia", alias: "nvidia", name: "NVIDIA NIM", icon: "developer_board", color: "#76B900", textIcon: "NV", website: "https://developer.nvidia.com/nim", notice: { text: "Free access for NVIDIA Developer Program members (prototyping & testing).", apiKeyUrl: "https://build.nvidia.com/settings/api-keys" } },
   ollama: { id: "ollama", alias: "ollama", name: "Ollama Cloud", icon: "cloud", color: "#ffffffff", textIcon: "OL", website: "https://ollama.com", notice: { text: "Free tier: light usage, 1 cloud model at a time (limits reset every 5h & 7d). Pro $20/mo · Max $100/mo.", apiKeyUrl: "https://ollama.com/settings/keys" } },
   vertex: { id: "vertex", alias: "vx", name: "Vertex AI", icon: "cloud", color: "#4285F4", textIcon: "VX", website: "https://cloud.google.com/vertex-ai", notice: { text: "New Google Cloud accounts get $300 free credits. Requires GCP project + Service Account with Vertex AI API enabled.", apiKeyUrl: "https://console.cloud.google.com/iam-admin/serviceaccounts" } },
+  "opencode-zen": { id: "opencode-zen", alias: "oz", name: "OpenCode Zen", icon: "terminal", color: "#6366F1", textIcon: "OZ", website: "https://opencode.ai/zen", notice: { text: "Free tier with MiniMax, Qwen, DeepSeek models. API key required.", apiKeyUrl: "https://opencode.ai/zen/settings" } },
 };
 
 // OAuth Providers
@@ -61,6 +62,7 @@ export const APIKEY_PROVIDERS = {
   chutes: { id: "chutes", alias: "ch", name: "Chutes AI", icon: "water_drop", color: "#ffffffff", textIcon: "CH", website: "https://chutes.ai" },
   "ollama-local": { id: "ollama-local", alias: "ollama-local", name: "Ollama Local", icon: "cloud", color: "#ffffffff", textIcon: "OL", website: "https://ollama.com" },
   "vertex-partner": { id: "vertex-partner", alias: "vxp", name: "Vertex Partner", icon: "cloud", color: "#34A853", textIcon: "VP", website: "https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-partner-models" },
+  "opencode-go": { id: "opencode-go", alias: "og", name: "OpenCode Go", icon: "terminal", color: "#6366F1", textIcon: "OG", website: "https://opencode.ai/zen/go" },
 };
 
 export const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";

@@ -30,11 +30,11 @@ const getBreadcrumbs = (pathname) => {
   
   if (paths.length === 0 || (paths.length === 1 && paths[0] === "dashboard")) {
     return [
-      { label: "9Router", href: "/dashboard", icon: Command },
+      { label: "Api2K", href: "/dashboard", icon: Command },
     ];
   }
 
-  const crumbs = [{ label: "9Router", href: "/dashboard", icon: Command }];
+  const crumbs = [{ label: "Api2K", href: "/dashboard", icon: Command }];
   
   const routeLabels = {
     endpoint: "Endpoint",
@@ -152,7 +152,7 @@ export function AppHeader({ onMenuClick, className }) {
             >
               <Avatar className="h-7 w-7 rounded-lg ring-2 ring-blue-100 dark:ring-blue-900/50">
                 <AvatarFallback className="bg-blue-500 text-white text-[10px] font-bold rounded-lg">
-                  9R
+                  2K
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -167,7 +167,7 @@ export function AppHeader({ onMenuClick, className }) {
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                   Admin
                 </p>
-                <p className="text-xs text-slate-400">9Router</p>
+                <p className="text-xs text-slate-400">Api2K</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-slate-100 dark:bg-zinc-800" />

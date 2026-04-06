@@ -213,24 +213,29 @@ export async function handleNonStreamingResponse({ providerResponse, provider, m
     provider, model, connectionId, 
     usage: usage || { prompt_tokens: 0, completion_tokens: 0 }
   });
-  saveRequestDetail(buildRequestDetail({
-    provider, model, connectionId,
-    latency: { ttft: totalLatency, total: totalLatency },
-    tokens: usage || { prompt_tokens: 0, completion_tokens: 0 },
-    request: extractRequestConfig(body, stream),
-    providerRequest: finalBody || translatedBody || null,
-    providerResponse: responseBody || null,
-    response: {
-      content: translatedResponse?.choices?.[0]?.message?.content || translatedResponse?.content || null,
-      thinking: translatedResponse?.choices?.[0]?.message?.reasoning_content || translatedResponse?.reasoning_content || null,
-      finish_reason: translatedResponse?.choices?.[0]?.finish_reason || "unknown"
-    },
-    status: "success"
-  }, { endpoint: clientRawRequest?.endpoint || null })).then(() => {
-    console.log(`[DEBUG] Request detail saved successfully for ${provider}/${model}`);
-  }).catch(err => {
-    console.error(`[DEBUG] Failed to save request detail for ${provider}:`, err.message);
-  });
+  
+  (async () => {
+    try {
+      const detail = await buildRequestDetail({
+        provider, model, connectionId,
+        latency: { ttft: totalLatency, total: totalLatency },
+        tokens: usage || { prompt_tokens: 0, completion_tokens: 0 },
+        request: extractRequestConfig(body, stream),
+        providerRequest: finalBody || translatedBody || null,
+        providerResponse: responseBody || null,
+        response: {
+          content: translatedResponse?.choices?.[0]?.message?.content || translatedResponse?.content || null,
+          thinking: translatedResponse?.choices?.[0]?.message?.reasoning_content || translatedResponse?.reasoning_content || null,
+          finish_reason: translatedResponse?.choices?.[0]?.finish_reason || "unknown"
+        },
+        status: "success"
+      }, { endpoint: clientRawRequest?.endpoint || null });
+      await saveRequestDetail(detail);
+      console.log(`[DEBUG] Request detail saved successfully for ${provider}/${model}`);
+    } catch (err) {
+      console.error(`[DEBUG] Failed to save request detail for ${provider}:`, err.message);
+    }
+  })();
 
   return {
     success: true,

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Card from "@/shared/components/Card";
 import Button from "@/shared/components/Button";
-import Drawer from "@/shared/components/Drawer";
+import Modal from "@/shared/components/Modal";
 import Pagination from "@/shared/components/Pagination";
 import { cn } from "@/shared/utils/cn";
 import { AI_PROVIDERS, getProviderByAlias } from "@/shared/constants/providers";
@@ -53,33 +53,54 @@ function getProviderName(providerId, cache) {
 
 function CollapsibleSection({ title, children, defaultOpen = false, icon = null }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  
+
   return (
-    <div className="border border-black/5 dark:border-white/5 rounded-lg overflow-hidden">
-      <button 
+    <div className="border border-border rounded-lg overflow-hidden">
+      <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-3 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors"
       >
-        <div className="flex items-center gap-2">
-          {icon && <span className="material-symbols-outlined text-[18px] text-text-muted">{icon}</span>}
-          <span className="font-semibold text-sm text-text-main">{title}</span>
+        <div className="flex items-center gap-2.5">
+          {icon && <span className="material-symbols-outlined text-[16px] text-primary">{icon}</span>}
+          <span className="font-medium text-[13px] text-text-main">{title}</span>
         </div>
         <span className={cn(
-          "material-symbols-outlined text-[20px] text-text-muted transition-transform duration-200",
+          "material-symbols-outlined text-[18px] text-text-muted transition-transform duration-200",
           isOpen ? "rotate-90" : ""
         )}>
           chevron_right
         </span>
       </button>
-      
+
       {isOpen && (
-        <div className="p-4 border-t border-black/5 dark:border-white/5">
+        <div className="p-4 border-t border-border">
           {children}
         </div>
       )}
     </div>
   );
+}
+
+// Minimal time formatter
+function formatTime(timestamp) {
+  const d = new Date(timestamp);
+  const time = d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return { time, date };
+}
+
+// Status dot color
+function statusColor(status) {
+  if (status === "success") return "bg-green-500";
+  if (status === "error") return "bg-red-500";
+  return "bg-amber-500";
+}
+
+function statusBg(status) {
+  if (status === "success") return "bg-green-500/10 text-green-600 dark:text-green-400";
+  if (status === "error") return "bg-red-500/10 text-red-600 dark:text-red-400";
+  return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
 }
 
 export default function RequestDetailsTab() {
@@ -94,7 +115,7 @@ export default function RequestDetailsTab() {
   const [selectedDetail, setSelectedDetail] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [providers, setProviders] = useState([]);
-  const [providerNameCache, setProviderNameCache] = useState(null);
+  const [providerNameCacheState, setProviderNameCacheState] = useState(null);
   const [filters, setFilters] = useState({
     provider: "",
     startDate: "",
@@ -108,7 +129,7 @@ export default function RequestDetailsTab() {
       setProviders(data.providers || []);
 
       const cache = await fetchProviderNames();
-      setProviderNameCache(cache.providerNameCache);
+      setProviderNameCacheState(cache.providerNameCache);
     } catch (error) {
       console.error("Failed to fetch providers:", error);
     }
@@ -150,6 +171,11 @@ export default function RequestDetailsTab() {
     setIsDrawerOpen(true);
   };
 
+  const handleCloseModal = () => {
+    setIsDrawerOpen(false);
+    setTimeout(() => setSelectedDetail(null), 200);
+  };
+
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
@@ -162,149 +188,156 @@ export default function RequestDetailsTab() {
     setFilters({ provider: "", startDate: "", endDate: "" });
   };
 
+  const hasActiveFilters = filters.provider || filters.startDate || filters.endDate;
+
   return (
-    <div className="flex flex-col gap-6">
-      <Card padding="md">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="provider-filter" className="text-sm font-medium text-text-main">Provider</label>
-            <select
-              id="provider-filter"
-              value={filters.provider}
-              onChange={(e) => setFilters({ ...filters, provider: e.target.value })}
-              className={cn(
-                "h-9 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
-                "text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20",
-                "cursor-pointer min-w-[150px]"
-              )}
-            >
-              <option value="">All Providers</option>
-              {providers.map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="flex flex-col gap-2">
-            <label htmlFor="start-date-filter" className="text-sm font-medium text-text-main">Start Date</label>
-            <input
-              id="start-date-filter"
-              type="datetime-local"
-              value={filters.startDate}
-              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-              className={cn(
-                "h-9 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
-                "text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20"
-              )}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="end-date-filter" className="text-sm font-medium text-text-main">End Date</label>
-            <input
-              id="end-date-filter"
-              type="datetime-local"
-              value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              className={cn(
-                "h-9 px-3 rounded-lg border border-black/10 dark:border-white/10 bg-surface",
-                "text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20"
-              )}
-            />
-          </div>
-          
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-text-main opacity-0" aria-hidden="true">Clear</span>
-            <Button 
-              variant="ghost" 
-              onClick={handleClearFilters}
-              disabled={!filters.provider && !filters.startDate && !filters.endDate}
-            >
-              Clear Filters
-            </Button>
-          </div>
+    <div className="flex flex-col gap-5">
+      {/* Filters — compact inline bar */}
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider">Provider</label>
+          <select
+            value={filters.provider}
+            onChange={(e) => setFilters({ ...filters, provider: e.target.value })}
+            className="h-9 px-3 rounded-lg border border-border bg-transparent text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[150px]"
+          >
+            <option value="">All</option>
+            {providers.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.name}
+              </option>
+            ))}
+          </select>
         </div>
-      </Card>
 
-      <Card padding="none">
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider">From</label>
+          <input
+            type="datetime-local"
+            value={filters.startDate}
+            onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+            className="h-9 px-3 rounded-lg border border-border bg-transparent text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-text-muted uppercase tracking-wider">To</label>
+          <input
+            type="datetime-local"
+            value={filters.endDate}
+            onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+            className="h-9 px-3 rounded-lg border border-border bg-transparent text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+
+        {hasActiveFilters && (
+          <button
+            onClick={handleClearFilters}
+            className="h-9 px-3 rounded-lg text-xs font-medium text-text-muted hover:text-text-main hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-[14px]">close</span>
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Table */}
+      <Card padding="none" className="border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-black/5 dark:border-white/5">
-                <th className="text-left p-4 text-sm font-semibold text-text-main">Timestamp</th>
-                <th className="text-left p-4 text-sm font-semibold text-text-main">Model</th>
-                <th className="text-left p-4 text-sm font-semibold text-text-main">Provider</th>
-                <th className="text-right p-4 text-sm font-semibold text-text-main">Input Tokens</th>
-                <th className="text-right p-4 text-sm font-semibold text-text-main">Output Tokens</th>
-                <th className="text-left p-4 text-sm font-semibold text-text-main">Latency</th>
-                <th className="text-center p-4 text-sm font-semibold text-text-main">Action</th>
+              <tr className="border-b border-border bg-black/[0.02] dark:bg-white/[0.02]">
+                <th className="text-left px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Time</th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Model</th>
+                <th className="text-right px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">In</th>
+                <th className="text-right px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Out</th>
+                <th className="text-right px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Cost</th>
+                <th className="text-right px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Latency</th>
+                <th className="text-center px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Status</th>
+                <th className="w-12" />
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-text-muted">
+                  <td colSpan="8" className="py-16 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
-                      Loading...
+                      <span className="material-symbols-outlined animate-spin text-[18px] text-text-muted">progress_activity</span>
+                      <span className="text-sm text-text-muted">Loading...</span>
                     </div>
                   </td>
                 </tr>
               ) : details.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-text-muted">
-                    No request details found
+                  <td colSpan="8" className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[24px] text-text-muted/40">receipt_long</span>
+                      <span className="text-sm text-text-muted">No requests found</span>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                details.map((detail, index) => (
-                  <tr
-                    key={`${detail.id}-${index}`}
-                    className="border-b border-black/5 dark:border-white/5 last:border-b-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
-                  >
-                    <td className="p-4 text-sm text-text-main">
-                      {new Date(detail.timestamp).toLocaleString()}
-                    </td>
-                    <td className="p-4 text-sm text-text-main font-mono">
-                      {detail.model}
-                    </td>
-                    <td className="p-4 text-sm text-text-main">
-                       <span className="font-medium">
-                         {getProviderName(detail.provider, providerNameCache)}
-                       </span>
-                     </td>
-                    <td className="p-4 text-sm text-text-main text-right font-mono">
-                      {detail.tokens?.prompt_tokens?.toLocaleString() || 0}
-                    </td>
-                    <td className="p-4 text-sm text-text-main text-right font-mono">
-                      {detail.tokens?.completion_tokens?.toLocaleString() || 0}
-                    </td>
-                    <td className="p-4 text-sm text-text-muted">
-                      <div className="flex flex-col gap-0.5">
-                        <div>TTFT: <span className="font-mono">{detail.latency?.ttft || 0}ms</span></div>
-                        <div>Total: <span className="font-mono">{detail.latency?.total || 0}ms</span></div>
-                      </div>
-                    </td>
-                    <td className="p-4 text-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDetail(detail)}
-                      >
-                        Detail
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                details.map((detail, index) => {
+                  const { time, date } = formatTime(detail.timestamp);
+                  return (
+                    <tr
+                      key={`${detail.id}-${index}`}
+                      onClick={() => handleViewDetail(detail)}
+                      className="border-b border-black/[0.03] dark:border-white/[0.03] last:border-b-0 hover:bg-black/[0.015] dark:hover:bg-white/[0.015] transition-colors cursor-pointer group"
+                    >
+                      <td className="px-4 py-2.5">
+                        <span className="text-[13px] font-mono text-text-main">{time}</span>
+                        <span className="text-[11px] text-text-muted ml-1.5">{date}</span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-[12px] font-medium text-text-main bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded">
+                          {detail.model}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <span className="text-[13px] font-mono text-text-muted tabular-nums">
+                          {detail.tokens?.prompt_tokens?.toLocaleString() || "0"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <span className="text-[13px] font-mono text-text-muted tabular-nums">
+                          {detail.tokens?.completion_tokens?.toLocaleString() || "0"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <span className="text-[13px] font-mono text-green-600 dark:text-green-400 tabular-nums">
+                          ${(detail.cost || 0).toFixed(4)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <span className="text-[13px] font-mono text-text-muted tabular-nums">
+                          {detail.latency?.total ? `${detail.latency.total}ms` : "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-center">
+                        <span className={cn(
+                          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium",
+                          statusBg(detail.status)
+                        )}>
+                          <span className={cn("w-1.5 h-1.5 rounded-full", statusColor(detail.status))} />
+                          {detail.status || "pending"}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2.5 text-center">
+                        <span className="material-symbols-outlined text-[16px] text-text-muted/30 group-hover:text-text-muted transition-colors">
+                          chevron_right
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
         {!loading && details.length > 0 && (
-          <div className="border-t border-black/5 dark:border-white/5">
+          <div className="border-t border-border">
             <Pagination
               currentPage={pagination.page}
               pageSize={pagination.pageSize}
@@ -316,110 +349,113 @@ export default function RequestDetailsTab() {
         )}
       </Card>
 
-      <Drawer
+      {/* Detail Modal */}
+      <Modal
         isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
+        onClose={handleCloseModal}
         title="Request Details"
-        width="lg"
+        size="full"
+        className="max-w-5xl"
       >
         {selectedDetail && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-text-muted">ID:</span>{" "}
-                <span className="text-text-main font-mono">{selectedDetail.id}</span>
-              </div>
-              <div>
-                <span className="text-text-muted">Timestamp:</span>{" "}
-                <span className="text-text-main">{new Date(selectedDetail.timestamp).toLocaleString()}</span>
-              </div>
-              <div>
-                 <span className="text-text-muted">Provider:</span>{" "}
-                 <span className="text-text-main font-medium">{getProviderName(selectedDetail.provider, providerNameCache)}</span>
-               </div>
-              <div>
-                <span className="text-text-muted">Model:</span>{" "}
-                <span className="text-text-main font-mono">{selectedDetail.model}</span>
-              </div>
-              <div>
-                <span className="text-text-muted">Status:</span>{" "}
+            {/* Metadata grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <MetaField label="Model" value={
+                <span className="text-[12px] font-medium text-text-main bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded">
+                  {selectedDetail.model}
+                </span>
+              } />
+              <MetaField label="Provider" value={getProviderName(selectedDetail.provider, providerNameCacheState)} />
+              <MetaField label="Status" value={
                 <span className={cn(
-                  "font-medium",
-                  selectedDetail.status === "success" ? "text-green-600" : "text-red-600"
+                  "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium",
+                  statusBg(selectedDetail.status)
                 )}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full", statusColor(selectedDetail.status))} />
                   {selectedDetail.status}
                 </span>
-              </div>
-              <div>
-                <span className="text-text-muted">Latency:</span>{" "}
-                <span className="text-text-main font-mono">
-                  TTFT {selectedDetail.latency?.ttft || 0}ms / Total {selectedDetail.latency?.total || 0}ms
+              } />
+              <MetaField label="Cost" value={
+                <span className="font-mono text-green-600 dark:text-green-400">${(selectedDetail.cost || 0).toFixed(6)}</span>
+              } />
+              <MetaField label="Timestamp" value={
+                <span className="font-mono text-[12px]">{new Date(selectedDetail.timestamp).toLocaleString()}</span>
+              } />
+              <MetaField label="Latency" value={
+                <span className="font-mono text-[12px]">
+                  {selectedDetail.latency?.ttft || 0}ms TTFT / {selectedDetail.latency?.total || 0}ms total
                 </span>
-              </div>
-              <div>
-                <span className="text-text-muted">Input Tokens:</span>{" "}
-                <span className="text-text-main font-mono">
-                  {selectedDetail.tokens?.prompt_tokens?.toLocaleString() || 0}
+              } />
+              <MetaField label="Tokens" value={
+                <span className="font-mono text-[12px]">
+                  {(selectedDetail.tokens?.prompt_tokens || 0).toLocaleString()} in / {(selectedDetail.tokens?.completion_tokens || 0).toLocaleString()} out
                 </span>
-              </div>
-              <div>
-                <span className="text-text-muted">Output Tokens:</span>{" "}
-                <span className="text-text-main font-mono">
-                  {selectedDetail.tokens?.completion_tokens?.toLocaleString() || 0}
-                </span>
-              </div>
+              } />
+              <MetaField label="ID" value={
+                <span className="font-mono text-[11px] text-text-muted truncate block max-w-[180px]">{selectedDetail.id}</span>
+              } />
             </div>
-            
-            <div className="space-y-4">
-              <CollapsibleSection title="1. Client Request (Input)" defaultOpen={true} icon="input">
-                <pre className="bg-black/5 dark:bg-white/5 p-4 rounded-lg overflow-auto max-h-[300px] text-xs font-mono text-text-main border border-black/5 dark:border-white/5">
-                  {JSON.stringify(selectedDetail.request, null, 2)}
-                </pre>
+
+            {/* Collapsible sections */}
+            <div className="space-y-3">
+              <CollapsibleSection title="Client Request (Input)" defaultOpen={true} icon="input">
+                <CodeBlock content={selectedDetail.request} />
               </CollapsibleSection>
 
               {selectedDetail.providerRequest && (
-                <CollapsibleSection title="2. Provider Request (Translated)" icon="translate">
-                  <pre className="bg-black/5 dark:bg-white/5 p-4 rounded-lg overflow-auto max-h-[300px] text-xs font-mono text-text-main border border-black/5 dark:border-white/5">
-                    {JSON.stringify(selectedDetail.providerRequest, null, 2)}
-                  </pre>
+                <CollapsibleSection title="Provider Request (Translated)" icon="translate">
+                  <CodeBlock content={selectedDetail.providerRequest} />
                 </CollapsibleSection>
               )}
 
               {selectedDetail.providerResponse && (
-                <CollapsibleSection title="3. Provider Response (Raw)" icon="data_object">
-                  <pre className="bg-black/5 dark:bg-white/5 p-4 rounded-lg overflow-auto max-h-[300px] text-xs font-mono text-text-main border border-black/5 dark:border-white/5">
-                    {typeof selectedDetail.providerResponse === 'object'
-                      ? JSON.stringify(selectedDetail.providerResponse, null, 2)
-                      : selectedDetail.providerResponse
-                    }
-                  </pre>
+                <CollapsibleSection title="Provider Response (Raw)" icon="data_object">
+                  <CodeBlock content={selectedDetail.providerResponse} />
                 </CollapsibleSection>
               )}
-              
-              <CollapsibleSection title="4. Client Response (Final)" defaultOpen={true} icon="output">
+
+              <CollapsibleSection title="Client Response (Final)" defaultOpen={true} icon="output">
                 {selectedDetail.response?.thinking && (
                   <div className="mb-4">
-                    <h4 className="font-semibold text-text-main mb-2 flex items-center gap-2 text-xs uppercase tracking-wide opacity-70">
-                      <span className="material-symbols-outlined text-[16px]">psychology</span>
-                      Thinking Process
-                    </h4>
-                    <pre className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg overflow-auto max-h-[200px] text-xs font-mono text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="material-symbols-outlined text-[14px] text-amber-500">psychology</span>
+                      <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">Thinking Process</span>
+                    </div>
+                    <pre className="bg-amber-500/5 p-3 rounded-lg overflow-auto max-h-[200px] text-[12px] font-mono text-amber-700 dark:text-amber-300 border border-amber-500/10">
                       {selectedDetail.response.thinking}
                     </pre>
                   </div>
                 )}
-                
-                <h4 className="font-semibold text-text-main mb-2 text-xs uppercase tracking-wide opacity-70">
-                  Content
-                </h4>
-                <pre className="bg-black/5 dark:bg-white/5 p-4 rounded-lg overflow-auto max-h-[300px] text-xs font-mono text-text-main border border-black/5 dark:border-white/5">
-                  {selectedDetail.response?.content || "[No content]"}
-                </pre>
+
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider">Content</span>
+                </div>
+                <CodeBlock content={selectedDetail.response?.content || "[No content]"} isString />
               </CollapsibleSection>
             </div>
           </div>
         )}
-      </Drawer>
+      </Modal>
     </div>
+  );
+}
+
+// Helper: metadata field in the detail modal
+function MetaField({ label, value }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-medium text-text-muted uppercase tracking-wider">{label}</span>
+      <div className="text-[13px] text-text-main">{value}</div>
+    </div>
+  );
+}
+
+// Helper: code block with consistent styling
+function CodeBlock({ content, isString = false }) {
+  return (
+    <pre className="bg-black/[0.03] dark:bg-white/[0.03] p-3 rounded-lg overflow-auto max-h-[300px] text-[12px] font-mono text-text-main border border-border">
+      {isString ? content : JSON.stringify(content, null, 2)}
+    </pre>
   );
 }

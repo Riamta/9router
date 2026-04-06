@@ -144,13 +144,18 @@ export async function handleForcedSSEToJson({ providerResponse, sourceFormat, pr
       const { msgItem, textContent } = pickAssistantMessageForChatCompletion(jsonResponse.output);
       const totalLatency = Date.now() - requestStartTime;
 
-      saveRequestDetail(buildRequestDetail({
-        ...ctx,
-        latency: { ttft: totalLatency, total: totalLatency },
-        tokens: { prompt_tokens: usage.input_tokens || 0, completion_tokens: usage.output_tokens || 0 },
-        response: { content: textContent, thinking: null, finish_reason: jsonResponse.status || "unknown" },
-        status: "success"
-      }, { endpoint: clientRawRequest?.endpoint || null })).catch(() => {});
+      (async () => {
+        try {
+          const detail = await buildRequestDetail({
+            ...ctx,
+            latency: { ttft: totalLatency, total: totalLatency },
+            tokens: { prompt_tokens: usage.input_tokens || 0, completion_tokens: usage.output_tokens || 0 },
+            response: { content: textContent, thinking: null, finish_reason: jsonResponse.status || "unknown" },
+            status: "success"
+          }, { endpoint: clientRawRequest?.endpoint || null });
+          await saveRequestDetail(detail);
+        } catch {}
+      })();
 
       // Client is Responses API → return as-is
       if (sourceFormat === FORMATS.OPENAI_RESPONSES) {
@@ -217,17 +222,22 @@ export async function handleForcedSSEToJson({ providerResponse, sourceFormat, pr
     saveUsageStats({ provider, model, tokens: usage, connectionId, apiKey, endpoint: clientRawRequest?.endpoint });
 
     const totalLatency = Date.now() - requestStartTime;
-    saveRequestDetail(buildRequestDetail({
-      ...ctx,
-      latency: { ttft: totalLatency, total: totalLatency },
-      tokens: usage,
-      response: {
-        content: parsed.choices?.[0]?.message?.content || null,
-        thinking: parsed.choices?.[0]?.message?.reasoning_content || null,
-        finish_reason: parsed.choices?.[0]?.finish_reason || "unknown"
-      },
-      status: "success"
-    }, { endpoint: clientRawRequest?.endpoint || null })).catch(() => {});
+    (async () => {
+      try {
+        const detail = await buildRequestDetail({
+          ...ctx,
+          latency: { ttft: totalLatency, total: totalLatency },
+          tokens: usage,
+          response: {
+            content: parsed.choices?.[0]?.message?.content || null,
+            thinking: parsed.choices?.[0]?.message?.reasoning_content || null,
+            finish_reason: parsed.choices?.[0]?.finish_reason || "unknown"
+          },
+          status: "success"
+        }, { endpoint: clientRawRequest?.endpoint || null });
+        await saveRequestDetail(detail);
+      } catch {}
+    })();
 
     return { success: true, response: new Response(JSON.stringify(parsed), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }) };
   } catch (err) {

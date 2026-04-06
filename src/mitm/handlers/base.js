@@ -7,7 +7,7 @@ const ROUTER_BASE = String(process.env.MITM_ROUTER_BASE || DEFAULT_LOCAL_ROUTER)
 const API_KEY = process.env.ROUTER_API_KEY;
 
 /**
- * Send body to 9Router at the given path and return the fetch Response object
+ * Send body to Api2K at the given path and return the fetch Response object
  */
 async function fetchRouter(openaiBody, path = "/v1/chat/completions") {
   const response = await fetch(`${ROUTER_BASE}${path}`, {

@@ -16,7 +16,7 @@ async function diagnose() {
     console.log("❌ Cannot connect to localhost:20129");
     console.log("   Error:", e.message);
     console.log("\n💡 Make sure Docker is running:");
-    console.log("   docker ps | findstr 9router");
+    console.log("   docker ps | findstr api2k");
     return;
   }
 

@@ -36,10 +36,10 @@ const readSettings = async () => {
   }
 };
 
-// Check if settings has 9Router config
-const has9RouterConfig = (settings) => {
+// Check if settings has Api2K config
+const hasApi2KConfig = (settings) => {
   if (!settings || !settings.models || !settings.models.providers) return false;
-  return !!settings.models.providers["9router"];
+  return !!settings.models.providers["api2k"];
 };
 
 // GET - Check openclaw CLI and read current settings
@@ -60,7 +60,7 @@ export async function GET() {
     return NextResponse.json({
       installed: true,
       settings,
-      has9Router: has9RouterConfig(settings),
+      hasApi2K: hasApi2KConfig(settings),
       settingsPath: getOpenClawSettingsPath(),
     });
   } catch (error) {
@@ -69,7 +69,7 @@ export async function GET() {
   }
 }
 
-// POST - Update 9Router settings (merge with existing settings)
+// POST - Update Api2K settings (merge with existing settings)
 export async function POST(request) {
   try {
     const { baseUrl, apiKey, model } = await request.json();
@@ -103,7 +103,7 @@ export async function POST(request) {
     const normalizedBaseUrl = baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
 
     // Update agents.defaults.model.primary
-    const fullModelId = `9router/${model}`;
+    const fullModelId = `api2k/${model}`;
     settings.agents.defaults.model.primary = fullModelId;
 
     // IMPORTANT: Add to allowlist in agents.defaults.models
@@ -111,8 +111,8 @@ export async function POST(request) {
       settings.agents.defaults.models[fullModelId] = {};
     }
 
-    // Update models.providers.9router
-    settings.models.providers["9router"] = {
+    // Update models.providers.api2k
+    settings.models.providers["api2k"] = {
       baseUrl: normalizedBaseUrl,
       apiKey: apiKey || "your_api_key",
       api: "openai-completions",
@@ -138,7 +138,7 @@ export async function POST(request) {
   }
 }
 
-// DELETE - Remove 9Router settings only (keep other settings)
+// DELETE - Remove Api2K settings only (keep other settings)
 export async function DELETE() {
   try {
     const settingsPath = getOpenClawSettingsPath();
@@ -158,9 +158,9 @@ export async function DELETE() {
       throw error;
     }
 
-    // Remove 9Router from models.providers
+    // Remove Api2K from models.providers
     if (settings.models && settings.models.providers) {
-      delete settings.models.providers["9router"];
+      delete settings.models.providers["api2k"];
       
       // Remove providers object if empty
       if (Object.keys(settings.models.providers).length === 0) {
@@ -168,9 +168,9 @@ export async function DELETE() {
       }
     }
 
-    // Remove 9router models from agents.defaults.models allowlist
+    // Remove api2k models from agents.defaults.models allowlist
     if (settings.agents?.defaults?.models) {
-      const keysToRemove = Object.keys(settings.agents.defaults.models).filter((k) => k.startsWith("9router/"));
+      const keysToRemove = Object.keys(settings.agents.defaults.models).filter((k) => k.startsWith("api2k/"));
       for (const key of keysToRemove) {
         delete settings.agents.defaults.models[key];
       }
@@ -179,8 +179,8 @@ export async function DELETE() {
       }
     }
 
-    // Reset agents.defaults.model.primary if it uses 9router
-    if (settings.agents?.defaults?.model?.primary?.startsWith("9router/")) {
+    // Reset agents.defaults.model.primary if it uses api2k
+    if (settings.agents?.defaults?.model?.primary?.startsWith("api2k/")) {
       delete settings.agents.defaults.model.primary;
     }
 
@@ -189,7 +189,7 @@ export async function DELETE() {
 
     return NextResponse.json({
       success: true,
-      message: "9Router settings removed successfully",
+      message: "Api2K settings removed successfully",
     });
   } catch (error) {
     console.log("Error resetting openclaw settings:", error);

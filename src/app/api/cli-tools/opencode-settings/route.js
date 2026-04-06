@@ -33,9 +33,9 @@ const readConfig = async () => {
   }
 };
 
-const has9RouterConfig = (config) => {
+const hasApi2KConfig = (config) => {
   if (!config?.provider) return false;
-  return !!config.provider["9router"];
+  return !!config.provider["api2k"];
 };
 
 // GET - Check opencode CLI and read current settings
@@ -56,7 +56,7 @@ export async function GET() {
     return NextResponse.json({
       installed: true,
       config,
-      has9Router: has9RouterConfig(config),
+      hasApi2K: hasApi2KConfig(config),
       configPath: getConfigPath(),
     });
   } catch (error) {
@@ -65,7 +65,7 @@ export async function GET() {
   }
 }
 
-// POST - Apply 9Router as openai-compatible provider
+// POST - Apply Api2K as openai-compatible provider
 export async function POST(request) {
   try {
     const { baseUrl, apiKey, model } = await request.json();
@@ -87,11 +87,11 @@ export async function POST(request) {
     } catch { /* No existing config */ }
 
     const normalizedBaseUrl = baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
-    const keyToUse = apiKey || "sk_9router";
+    const keyToUse = apiKey || "sk_api2k";
 
-    // Merge 9router provider
+    // Merge api2k provider
     if (!config.provider) config.provider = {};
-    config.provider["9router"] = {
+    config.provider["api2k"] = {
       npm: "@ai-sdk/openai-compatible",
       options: {
         baseURL: normalizedBaseUrl,
@@ -103,7 +103,7 @@ export async function POST(request) {
     };
 
     // Set as active model
-    config.model = `9router/${model}`;
+    config.model = `api2k/${model}`;
 
     await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 
@@ -118,7 +118,7 @@ export async function POST(request) {
   }
 }
 
-// DELETE - Remove 9Router provider from config
+// DELETE - Remove Api2K provider from config
 export async function DELETE() {
   try {
     const configPath = getConfigPath();
@@ -134,17 +134,17 @@ export async function DELETE() {
       throw error;
     }
 
-    // Remove 9router provider
-    if (config.provider) delete config.provider["9router"];
+    // Remove api2k provider
+    if (config.provider) delete config.provider["api2k"];
 
-    // Reset model if it was pointing to 9router
-    if (config.model?.startsWith("9router/")) delete config.model;
+    // Reset model if it was pointing to api2k
+    if (config.model?.startsWith("api2k/")) delete config.model;
 
     await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 
     return NextResponse.json({
       success: true,
-      message: "9Router settings removed from OpenCode",
+      message: "Api2K settings removed from OpenCode",
     });
   } catch (error) {
     console.log("Error resetting opencode settings:", error);

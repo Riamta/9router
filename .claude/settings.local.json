@@ -6,7 +6,8 @@
       "Read(//c/Users/hieul/.claude/plans/**)",
       "Bash(mkdir -p \"C:/Users/hieul/.claude/plans\")",
       "Bash(python3 -c ':*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx next:*)"
     ]
   }
 }

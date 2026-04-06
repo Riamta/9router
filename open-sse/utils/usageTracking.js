@@ -159,7 +159,7 @@ export function hasValidUsage(usage) {
 }
 
 /**
- * Extract usage from any format (Claude, OpenAI, Gemini, Responses API)
+ * Extract usage from any format (Claude, OpenAI, Gemini, Ollama, Responses API)
  */
 export function extractUsage(chunk) {
   if (!chunk || typeof chunk !== "object") return null;
@@ -205,6 +205,15 @@ export function extractUsage(chunk) {
       total_tokens: usageMeta.totalTokenCount,
       cached_tokens: usageMeta.cachedContentTokenCount,
       reasoning_tokens: usageMeta.thoughtsTokenCount
+    });
+  }
+
+  // Ollama format: prompt_eval_count (input), eval_count (output)
+  if (chunk.prompt_eval_count !== undefined || chunk.eval_count !== undefined) {
+    return normalizeUsage({
+      prompt_tokens: chunk.prompt_eval_count || 0,
+      completion_tokens: chunk.eval_count || 0,
+      total_tokens: (chunk.prompt_eval_count || 0) + (chunk.eval_count || 0)
     });
   }
 

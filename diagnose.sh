@@ -7,7 +7,7 @@ if curl -s -o /dev/null -w "%{http_code}" http://localhost:20129/dashboard > /de
     echo "✅ Server is running on port 20129"
 else
     echo "❌ Cannot connect to localhost:20129"
-    echo "   Make sure Docker is running: docker ps | grep 9router"
+    echo "   Make sure Docker is running: docker ps | grep api2k"
     exit 1
 fi
 
@@ -70,4 +70,4 @@ fi
 
 echo ""
 echo "💡 Check Docker logs for more info:"
-echo "   docker logs 9router | tail -50"
+echo "   docker logs api2k | tail -50"

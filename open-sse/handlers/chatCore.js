@@ -120,15 +120,20 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
   } catch (error) {
     trackPendingRequest(model, provider, connectionId, false, true);
     appendRequestLog({ model, provider, connectionId, status: `FAILED ${error.name === "AbortError" ? 499 : HTTP_STATUS.BAD_GATEWAY}` }).catch(() => {});
-    saveRequestDetail(buildRequestDetail({
-      provider, model, connectionId,
-      latency: { ttft: 0, total: Date.now() - requestStartTime },
-      tokens: { prompt_tokens: 0, completion_tokens: 0 },
-      request: extractRequestConfig(body, stream),
-      providerRequest: translatedBody || null,
-      response: { error: error.message || String(error), status: error.name === "AbortError" ? 499 : 502, thinking: null },
-      status: "error"
-    })).catch(() => {});
+    (async () => {
+      try {
+        const detail = await buildRequestDetail({
+          provider, model, connectionId,
+          latency: { ttft: 0, total: Date.now() - requestStartTime },
+          tokens: { prompt_tokens: 0, completion_tokens: 0 },
+          request: extractRequestConfig(body, stream),
+          providerRequest: translatedBody || null,
+          response: { error: error.message || String(error), status: error.name === "AbortError" ? 499 : 502, thinking: null },
+          status: "error"
+        });
+        await saveRequestDetail(detail);
+      } catch {}
+    })();
 
     if (error.name === "AbortError") {
       streamController.handleError(error);
@@ -166,15 +171,20 @@ export async function handleChatCore({ body, modelInfo, credentials, log, onCred
     trackPendingRequest(model, provider, connectionId, false, true);
     const { statusCode, message, retryAfterMs } = await parseUpstreamError(providerResponse, provider);
     appendRequestLog({ model, provider, connectionId, status: `FAILED ${statusCode}` }).catch(() => {});
-    saveRequestDetail(buildRequestDetail({
-      provider, model, connectionId,
-      latency: { ttft: 0, total: Date.now() - requestStartTime },
-      tokens: { prompt_tokens: 0, completion_tokens: 0 },
-      request: extractRequestConfig(body, stream),
-      providerRequest: finalBody || translatedBody || null,
-      response: { error: message, status: statusCode, thinking: null },
-      status: "error"
-    })).catch(() => {});
+    (async () => {
+      try {
+        const detail = await buildRequestDetail({
+          provider, model, connectionId,
+          latency: { ttft: 0, total: Date.now() - requestStartTime },
+          tokens: { prompt_tokens: 0, completion_tokens: 0 },
+          request: extractRequestConfig(body, stream),
+          providerRequest: finalBody || translatedBody || null,
+          response: { error: message, status: statusCode, thinking: null },
+          status: "error"
+        });
+        await saveRequestDetail(detail);
+      } catch {}
+    })();
 
     const errMsg = formatProviderError(new Error(message), provider, model, statusCode);
     console.log(`${COLORS.red}[ERROR] ${errMsg}${COLORS.reset}`);

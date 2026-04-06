@@ -10,16 +10,16 @@ const isCloud = typeof caches !== 'undefined' || typeof caches === 'object';
 
 // Get app name from root package.json config
 function getAppName() {
-  if (isCloud) return "9router"; // Skip file system access in Workers
+  if (isCloud) return "api2k"; // Skip file system access in Workers
 
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   // Look for root package.json (monorepo root)
   const rootPkgPath = path.resolve(__dirname, "../../../package.json");
   try {
     const pkg = JSON.parse(fs.readFileSync(rootPkgPath, "utf-8"));
-    return pkg.config?.appName || "9router";
+    return pkg.config?.appName || "api2k";
   } catch {
-    return "9router";
+    return "api2k";
   }
 }
 
@@ -43,7 +43,7 @@ function getUserDataDir() {
   } catch (error) {
     console.error("[usageDb] Failed to get user data directory:", error.message);
     // Fallback to cwd if homedir fails
-    return path.join(process.cwd(), ".9router");
+    return path.join(process.cwd(), ".api2k");
   }
 }
 
@@ -376,7 +376,26 @@ export async function getRecentLogs(limit = 200) {
   try {
     const content = fs.readFileSync(LOG_FILE, "utf-8");
     const lines = content.trim().split("\n");
-    return lines.slice(-limit).reverse();
+    return lines.slice(-limit).reverse().map((line) => {
+      const parts = line.split(" | ");
+      if (parts.length >= 7) {
+        const [time, model, provider, account, tokensSent, tokensReceived, status] = parts;
+        const sent = parseInt(tokensSent) || 0;
+        const received = parseInt(tokensReceived) || 0;
+        return {
+          time,
+          model: model || "-",
+          provider: provider || "-",
+          account: account || "-",
+          tokensSent: sent,
+          tokensReceived: received,
+          tokens: sent + received,
+          statusRaw: status?.trim(),
+          status: status?.trim().toUpperCase().includes("OK") || status?.trim().toLowerCase() === "success" ? "success" : status?.trim().toUpperCase().includes("PENDING") ? "pending" : "error",
+        };
+      }
+      return { time: "-", model: "Unknown", provider: "Unknown", tokens: 0, status: "error", raw: line };
+    });
   } catch (error) {
     console.error("[usageDb] Failed to read log.txt:", error.message);
     console.error("[usageDb] LOG_FILE path:", LOG_FILE);
@@ -391,7 +410,7 @@ export async function getRecentLogs(limit = 200) {
  * @param {object} tokens - Token counts
  * @returns {number} Cost in dollars
  */
-async function calculateCost(provider, model, tokens) {
+export async function calculateCost(provider, model, tokens) {
   if (!tokens || !provider || !model) return 0;
 
   try {
@@ -826,6 +845,38 @@ export async function getChartData(period = "7d") {
   }
 
   return buckets.map(({ label, tokens, cost }) => ({ label, tokens, cost }));
+}
+
+/**
+ * Get hourly activity data for last 24 hours
+ * @returns {Promise<Array<{hour: string, requests: number}>>}
+ */
+export async function getHourlyActivity() {
+  const db = await getUsageDb();
+  const history = db.data.history || [];
+  const now = new Date();
+  const startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+  
+  const hours = [];
+  for (let i = 0; i < 24; i++) {
+    const hourTime = new Date(startTime.getTime() + i * 60 * 60 * 1000);
+    const hourLabel = hourTime.toLocaleTimeString("vi-VN", { hour: "2-digit", hour12: false });
+    hours.push({ hour: hourLabel, requests: 0, _ts: hourTime.getTime() });
+  }
+  
+  for (const entry of history) {
+    const entryTime = new Date(entry.timestamp).getTime();
+    if (entryTime < startTime.getTime() || entryTime > now.getTime()) continue;
+    
+    const idx = Math.min(
+      Math.floor((entryTime - startTime.getTime()) / (60 * 60 * 1000)),
+      23
+    );
+    if (hours[idx]) hours[idx].requests++;
+  }
+  
+  const currentHourLabel = now.toLocaleTimeString("vi-VN", { hour: "2-digit", hour12: false });
+  return hours.map(({ hour, requests }) => ({ hour, requests, isCurrent: hour === currentHourLabel }));
 }
 
 // Re-export request details functions from new SQLite-based module

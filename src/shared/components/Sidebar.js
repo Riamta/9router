@@ -10,8 +10,9 @@ import Button from "./Button";
 import { ConfirmModal } from "./Modal";
 
 const navItems = [
-  { href: "/dashboard/endpoint", label: "Endpoint", icon: "api" },
+  { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
   { href: "/dashboard/providers", label: "Providers", icon: "dns" },
+  { href: "/dashboard/api-keys", label: "API Keys", icon: "vpn_key" },
   // { href: "/dashboard/basic-chat", label: "Basic Chat", icon: "chat" }, // Hidden
   { href: "/dashboard/combos", label: "Combos", icon: "layers" },
   { href: "/dashboard/usage", label: "Usage", icon: "bar_chart" },
@@ -53,8 +54,8 @@ export default function Sidebar({ onClose }) {
   }, []);
 
   const isActive = (href) => {
-    if (href === "/dashboard/endpoint") {
-      return pathname === "/dashboard" || pathname.startsWith("/dashboard/endpoint");
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
     }
     return pathname.startsWith(href);
   };
@@ -100,7 +101,7 @@ export default function Sidebar({ onClose }) {
                 ↑ New version available: v{updateInfo.latestVersion}
               </span>
               <code className="text-[10px] text-green-600/80 dark:text-amber-400/70 font-mono select-all">
-                npm install -g 9router@latest
+                npm install -g api2k@latest
               </code>
             </div>
           )}
