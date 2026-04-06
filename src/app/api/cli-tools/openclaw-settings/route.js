@@ -12,15 +12,24 @@ const execAsync = promisify(exec);
 const getOpenClawDir = () => path.join(os.homedir(), ".openclaw");
 const getOpenClawSettingsPath = () => path.join(getOpenClawDir(), "openclaw.json");
 
-// Check if openclaw CLI is installed
+// Check if openclaw CLI is installed (via which/where or config file exists)
 const checkOpenClawInstalled = async () => {
   try {
     const isWindows = os.platform() === "win32";
     const command = isWindows ? "where openclaw" : "which openclaw";
-    await execAsync(command, { windowsHide: true });
+    // On Windows, inject %APPDATA%\npm into PATH so npm global packages are found
+    const env = isWindows
+      ? { ...process.env, PATH: `${process.env.APPDATA}\\npm;${process.env.PATH}` }
+      : process.env;
+    await execAsync(command, { windowsHide: true, env });
     return true;
   } catch {
-    return false;
+    try {
+      await fs.access(getOpenClawSettingsPath());
+      return true;
+    } catch {
+      return false;
+    }
   }
 };
 
@@ -42,6 +51,19 @@ const hasApi2KConfig = (settings) => {
   return !!settings.models.providers["api2k"];
 };
 
+// Read per-agent models.json and return current model id (without "9router/" prefix)
+const readAgentModel = async (agentDir) => {
+  try {
+    const modelsPath = path.join(agentDir, "models.json");
+    const content = await fs.readFile(modelsPath, "utf-8");
+    const data = JSON.parse(content);
+    const models = data?.providers?.["9router"]?.models;
+    return models?.[0]?.id || null;
+  } catch {
+    return null;
+  }
+};
+
 // GET - Check openclaw CLI and read current settings
 export async function GET() {
   try {
@@ -56,6 +78,15 @@ export async function GET() {
     }
 
     const settings = await readSettings();
+
+    // Enrich agents list with current per-agent model from models.json
+    const agentList = settings?.agents?.list || [];
+    const enrichedAgents = await Promise.all(
+      agentList.map(async (agent) => {
+        const agentModel = agent.agentDir ? await readAgentModel(agent.agentDir) : null;
+        return { ...agent, currentModel: agentModel };
+      })
+    );
 
     return NextResponse.json({
       installed: true,
@@ -72,7 +103,8 @@ export async function GET() {
 // POST - Update Api2K settings (merge with existing settings)
 export async function POST(request) {
   try {
-    const { baseUrl, apiKey, model } = await request.json();
+    // agentModels: { [agentId]: modelId } for per-agent override
+    const { baseUrl, apiKey, model, agentModels = {} } = await request.json();
     
     if (!baseUrl || !model) {
       return NextResponse.json({ error: "baseUrl and model are required" }, { status: 400 });
@@ -81,17 +113,14 @@ export async function POST(request) {
     const openclawDir = getOpenClawDir();
     const settingsPath = getOpenClawSettingsPath();
 
-    // Ensure directory exists
     await fs.mkdir(openclawDir, { recursive: true });
 
-    // Read existing settings or create new
     let settings = {};
     try {
       const existingSettings = await fs.readFile(settingsPath, "utf-8");
       settings = JSON.parse(existingSettings);
     } catch { /* No existing settings */ }
 
-    // Ensure structure exists
     if (!settings.agents) settings.agents = {};
     if (!settings.agents.defaults) settings.agents.defaults = {};
     if (!settings.agents.defaults.model) settings.agents.defaults.model = {};
@@ -99,16 +128,30 @@ export async function POST(request) {
     if (!settings.models) settings.models = {};
     if (!settings.models.providers) settings.models.providers = {};
 
-    // Normalize baseUrl to ensure /v1 suffix
     const normalizedBaseUrl = baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
 
     // Update agents.defaults.model.primary
     const fullModelId = `api2k/${model}`;
     settings.agents.defaults.model.primary = fullModelId;
 
-    // IMPORTANT: Add to allowlist in agents.defaults.models
-    if (!settings.agents.defaults.models[fullModelId]) {
-      settings.agents.defaults.models[fullModelId] = {};
+    // Collect all unique models (default + per-agent)
+    const allModelIds = new Set([model]);
+    Object.values(agentModels).forEach((m) => { if (m) allModelIds.add(m); });
+
+    // Add fresh api2k models to allowlist
+    allModelIds.forEach((m) => {
+      settings.agents.defaults.models[`api2k/${m}`] = {};
+    });
+
+    // Remove old api2k model from each agent in agents.list
+    if (settings.agents.list) {
+      settings.agents.list = settings.agents.list.map((agent) => {
+        if (agent.model?.startsWith("api2k/")) {
+          const { model: _, ...rest } = agent;
+          return rest;
+        }
+        return agent;
+      });
     }
 
     // Update models.providers.api2k
@@ -116,15 +159,9 @@ export async function POST(request) {
       baseUrl: normalizedBaseUrl,
       apiKey: apiKey || "your_api_key",
       api: "openai-completions",
-      models: [
-        {
-          id: model,
-          name: model.split("/").pop() || model,
-        },
-      ],
+      models: [...allModelIds].map((m) => ({ id: m, name: m.split("/").pop() || m })),
     };
 
-    // Write settings
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
 
     return NextResponse.json({
