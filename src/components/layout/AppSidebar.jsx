@@ -38,7 +38,13 @@ import {
   Command,
   LayoutDashboard,
   Key,
+  Image,
+  Mic,
+  Music,
+  Film,
+  BarChart,
 } from "lucide-react";
+import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 
 // Navigation - simple black text
 const mainNavItems = [
@@ -224,6 +230,33 @@ export function AppSidebar({ onClose, className }) {
                 {enableTranslator && (
                   <NavItem item={{ href: "/dashboard/translator", label: "Translator", icon: Languages }} />
                 )}
+              </div>
+            </div>
+
+            {/* Media Providers Section */}
+            <div className="px-2">
+              <SectionHeader title="Media" count={MEDIA_PROVIDER_KINDS.length} />
+              <div className="mt-1 space-y-0.5">
+                {MEDIA_PROVIDER_KINDS.map((kind) => {
+                  const iconMap = {
+                    embedding: BarChart,
+                    image: Image,
+                    tts: Mic,
+                    stt: Mic,
+                    video: Film,
+                    music: Music,
+                  };
+                  return (
+                    <NavItem
+                      key={kind.id}
+                      item={{
+                        href: `/dashboard/media-providers/${kind.id}`,
+                        label: kind.label,
+                        icon: iconMap[kind.id] || Image,
+                      }}
+                    />
+                  );
+                })}
               </div>
             </div>
 
