@@ -51,13 +51,13 @@ const hasApi2KConfig = (settings) => {
   return !!settings.models.providers["api2k"];
 };
 
-// Read per-agent models.json and return current model id (without "9router/" prefix)
+// Read per-agent models.json and return current model id (without "api2k/" prefix)
 const readAgentModel = async (agentDir) => {
   try {
     const modelsPath = path.join(agentDir, "models.json");
     const content = await fs.readFile(modelsPath, "utf-8");
     const data = JSON.parse(content);
-    const models = data?.providers?.["9router"]?.models;
+    const models = data?.providers?.["api2k"]?.models;
     return models?.[0]?.id || null;
   } catch {
     return null;
@@ -91,6 +91,7 @@ export async function GET() {
     return NextResponse.json({
       installed: true,
       settings,
+      agents: enrichedAgents,
       hasApi2K: hasApi2KConfig(settings),
       settingsPath: getOpenClawSettingsPath(),
     });
@@ -99,6 +100,26 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to check openclaw settings" }, { status: 500 });
   }
 }
+
+// Write per-agent models.json
+const writeAgentModels = async (agentDir, model, baseUrl, apiKey) => {
+  await fs.mkdir(agentDir, { recursive: true });
+  const modelsPath = path.join(agentDir, "models.json");
+  let existing = {};
+  try {
+    const content = await fs.readFile(modelsPath, "utf-8");
+    existing = JSON.parse(content);
+  } catch { /* No existing */ }
+
+  if (!existing.providers) existing.providers = {};
+  existing.providers["api2k"] = {
+    baseUrl,
+    apiKey: apiKey || "your_api_key",
+    api: "openai-completions",
+    models: [{ id: model, name: model.split("/").pop() || model }],
+  };
+  await fs.writeFile(modelsPath, JSON.stringify(existing, null, 2));
+};
 
 // POST - Update Api2K settings (merge with existing settings)
 export async function POST(request) {
@@ -129,9 +150,14 @@ export async function POST(request) {
     if (!settings.models.providers) settings.models.providers = {};
 
     const normalizedBaseUrl = baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
-
-    // Update agents.defaults.model.primary
     const fullModelId = `api2k/${model}`;
+
+    // Remove all old api2k/* entries from agents.defaults.models
+    Object.keys(settings.agents.defaults.models)
+      .filter((k) => k.startsWith("api2k/"))
+      .forEach((k) => { delete settings.agents.defaults.models[k]; });
+
+    // Update default model
     settings.agents.defaults.model.primary = fullModelId;
 
     // Collect all unique models (default + per-agent)
@@ -154,13 +180,32 @@ export async function POST(request) {
       });
     }
 
-    // Update models.providers.api2k
+    // Update models.providers.api2k with all models
     settings.models.providers["api2k"] = {
       baseUrl: normalizedBaseUrl,
       apiKey: apiKey || "your_api_key",
       api: "openai-completions",
       models: [...allModelIds].map((m) => ({ id: m, name: m.split("/").pop() || m })),
     };
+
+    // Set per-agent model in agents.list and write models.json
+    if (settings.agents.list) {
+      settings.agents.list = settings.agents.list.map((agent) => {
+        const agentModel = agentModels[agent.id];
+        if (agentModel) return { ...agent, model: `api2k/${agentModel}` };
+        return agent;
+      });
+
+      // Write per-agent models.json for agents with agentDir
+      await Promise.all(
+        settings.agents.list.map(async (agent) => {
+          if (!agent.agentDir) return;
+          const agentModel = agentModels[agent.id];
+          const modelToWrite = agentModel || model; // fallback to default
+          await writeAgentModels(agent.agentDir, modelToWrite, normalizedBaseUrl, apiKey);
+        })
+      );
+    }
 
     await fs.writeFile(settingsPath, JSON.stringify(settings, null, 2));
 
