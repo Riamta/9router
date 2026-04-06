@@ -40,11 +40,9 @@ import {
   Key,
   Image,
   Mic,
-  Music,
   Film,
   BarChart,
 } from "lucide-react";
-import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 
 // Navigation - simple black text
 const mainNavItems = [
@@ -210,31 +208,15 @@ export function AppSidebar({ onClose, className }) {
 
             {/* Providers Section */}
             <div className="px-2">
-              <SectionHeader title="Providers" count={1 + MEDIA_PROVIDER_KINDS.length} />
+              <SectionHeader title="Providers" count={5} />
               <div className="mt-1 space-y-0.5">
-                {/* Text Providers (original Providers page) */}
-                <NavItem item={{ href: "/dashboard/providers", label: "Text", icon: Database }} />
-                {/* Media Providers */}
-                {MEDIA_PROVIDER_KINDS.map((kind) => {
-                  const iconMap = {
-                    embedding: BarChart,
-                    image: Image,
-                    tts: Mic,
-                    stt: Mic,
-                    video: Film,
-                    music: Music,
-                  };
-                  return (
-                    <NavItem
-                      key={kind.id}
-                      item={{
-                        href: `/dashboard/media-providers/${kind.id}`,
-                        label: kind.label,
-                        icon: iconMap[kind.id] || Image,
-                      }}
-                    />
-                  );
-                })}
+                {/* Text Providers */}
+                <NavItem item={{ href: "/dashboard/providers", label: "Text (6)", icon: Database }} />
+                {/* Media Providers - Custom order and counts */}
+                <NavItem item={{ href: "/dashboard/media-providers/embedding", label: "Embeddings (25)", icon: BarChart }} />
+                <NavItem item={{ href: "/dashboard/media-providers/image", label: "Image (17)", icon: Image }} />
+                <NavItem item={{ href: "/dashboard/media-providers/audio", label: "Audio (5)", icon: Mic }} />
+                <NavItem item={{ href: "/dashboard/media-providers/video", label: "Video (4)", icon: Film }} />
               </div>
             </div>
 

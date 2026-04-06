@@ -73,13 +73,12 @@ export const APIKEY_PROVIDERS = {
 };
 
 // Media provider kinds — each kind maps to a route and endpoint config
+// TTS + STT + Music merged into Audio
 export const MEDIA_PROVIDER_KINDS = [
-  { id: "embedding", label: "Embedding", icon: "data_array",      endpoint: { method: "POST", path: "/v1/embeddings" } },
-  { id: "image",     label: "Image",     icon: "image",            endpoint: { method: "POST", path: "/v1/images/generations" } },
-  { id: "tts",       label: "TTS",       icon: "record_voice_over", endpoint: { method: "POST", path: "/v1/audio/speech" } },
-  { id: "stt",       label: "STT",       icon: "mic",              endpoint: { method: "POST", path: "/v1/audio/transcriptions" } },
-  { id: "video",     label: "Video",     icon: "movie",            endpoint: { method: "POST", path: "/v1/video/generations" } },
-  { id: "music",     label: "Music",     icon: "music_note",       endpoint: { method: "POST", path: "/v1/audio/music" } },
+  { id: "embedding", label: "Embeddings", icon: "data_array", endpoint: { method: "POST", path: "/v1/embeddings" } },
+  { id: "image",     label: "Image",      icon: "image",      endpoint: { method: "POST", path: "/v1/images/generations" } },
+  { id: "audio",     label: "Audio",      icon: "mic",        endpoint: { method: "POST", path: "/v1/audio" } },
+  { id: "video",     label: "Video",      icon: "movie",      endpoint: { method: "POST", path: "/v1/video/generations" } },
 ];
 
 export const OPENAI_COMPATIBLE_PREFIX = "openai-compatible-";
@@ -138,9 +137,13 @@ export const ID_TO_ALIAS = Object.values(AI_PROVIDERS).reduce((acc, p) => {
 
 // Helper: Get providers by service kind (e.g. "tts", "embedding", "image")
 // Providers without serviceKinds default to ["llm"]
+// Special case: "audio" includes tts + stt + music
 export function getProvidersByKind(kind) {
   return Object.values(AI_PROVIDERS).filter((p) => {
     const kinds = p.serviceKinds ?? ["llm"];
+    if (kind === "audio") {
+      return kinds.includes("tts") || kinds.includes("stt") || kinds.includes("music");
+    }
     return kinds.includes(kind);
   });
 }
