@@ -208,15 +208,15 @@ export function AppSidebar({ onClose, className }) {
 
             {/* Providers Section */}
             <div className="px-2">
-              <SectionHeader title="Providers" count={5} />
+              <SectionHeader title="Providers" />
               <div className="mt-1 space-y-0.5">
                 {/* Text Providers */}
-                <NavItem item={{ href: "/dashboard/providers", label: "Text (6)", icon: Database }} />
-                {/* Media Providers - Custom order and counts */}
-                <NavItem item={{ href: "/dashboard/media-providers/embedding", label: "Embeddings (25)", icon: BarChart }} />
-                <NavItem item={{ href: "/dashboard/media-providers/image", label: "Image (17)", icon: Image }} />
-                <NavItem item={{ href: "/dashboard/media-providers/audio", label: "Audio (5)", icon: Mic }} />
-                <NavItem item={{ href: "/dashboard/media-providers/video", label: "Video (4)", icon: Film }} />
+                <NavItem item={{ href: "/dashboard/providers", label: "Text", icon: Database }} />
+                {/* Media Providers */}
+                <NavItem item={{ href: "/dashboard/media-providers/embedding", label: "Embeddings", icon: BarChart }} />
+                <NavItem item={{ href: "/dashboard/media-providers/image", label: "Image", icon: Image }} />
+                <NavItem item={{ href: "/dashboard/media-providers/audio", label: "Audio", icon: Mic }} />
+                <NavItem item={{ href: "/dashboard/media-providers/video", label: "Video", icon: Film }} />
               </div>
             </div>
 
