@@ -49,7 +49,6 @@ import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 // Navigation - simple black text
 const mainNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/providers", label: "Providers", icon: Database },
   { href: "/dashboard/api-keys", label: "API Keys", icon: Key },
   { href: "/dashboard/models", label: "Models", icon: Cpu },
   { href: "/dashboard/combos", label: "Combos", icon: Layers },
@@ -209,6 +208,36 @@ export function AppSidebar({ onClose, className }) {
               </div>
             </div>
 
+            {/* Providers Section */}
+            <div className="px-2">
+              <SectionHeader title="Providers" count={1 + MEDIA_PROVIDER_KINDS.length} />
+              <div className="mt-1 space-y-0.5">
+                {/* Text Providers (original Providers page) */}
+                <NavItem item={{ href: "/dashboard/providers", label: "Text", icon: Database }} />
+                {/* Media Providers */}
+                {MEDIA_PROVIDER_KINDS.map((kind) => {
+                  const iconMap = {
+                    embedding: BarChart,
+                    image: Image,
+                    tts: Mic,
+                    stt: Mic,
+                    video: Film,
+                    music: Music,
+                  };
+                  return (
+                    <NavItem
+                      key={kind.id}
+                      item={{
+                        href: `/dashboard/media-providers/${kind.id}`,
+                        label: kind.label,
+                        icon: iconMap[kind.id] || Image,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Analytics Section */}
             <div className="px-2">
               <SectionHeader title="Analytics" count={analyticsNavItems.length} />
@@ -230,33 +259,6 @@ export function AppSidebar({ onClose, className }) {
                 {enableTranslator && (
                   <NavItem item={{ href: "/dashboard/translator", label: "Translator", icon: Languages }} />
                 )}
-              </div>
-            </div>
-
-            {/* Media Providers Section */}
-            <div className="px-2">
-              <SectionHeader title="Media" count={MEDIA_PROVIDER_KINDS.length} />
-              <div className="mt-1 space-y-0.5">
-                {MEDIA_PROVIDER_KINDS.map((kind) => {
-                  const iconMap = {
-                    embedding: BarChart,
-                    image: Image,
-                    tts: Mic,
-                    stt: Mic,
-                    video: Film,
-                    music: Music,
-                  };
-                  return (
-                    <NavItem
-                      key={kind.id}
-                      item={{
-                        href: `/dashboard/media-providers/${kind.id}`,
-                        label: kind.label,
-                        icon: iconMap[kind.id] || Image,
-                      }}
-                    />
-                  );
-                })}
               </div>
             </div>
 
