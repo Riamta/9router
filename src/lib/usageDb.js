@@ -826,7 +826,7 @@ export async function getUsageStats(period = "all") {
 /**
  * Get time-series chart data for a given period
  * @param {"24h"|"7d"|"30d"|"60d"} period
- * @returns {Promise<Array<{label: string, tokens: number, cost: number}>>}
+ * @returns {Promise<Array<{label: string, tokens: number, cost: number, success: number, errors: number}>>}
  */
 export async function getChartData(period = "7d") {
   const db = await getUsageDb();
@@ -836,7 +836,7 @@ export async function getChartData(period = "7d") {
   let bucketCount, bucketMs, labelFn;
   if (period === "24h") {
     bucketCount = 24;
-    bucketMs = 3600000; // 1 hour
+    bucketMs = 3600000;
     labelFn = (ts) => new Date(ts).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
   } else if (period === "7d") {
     bucketCount = 7;
@@ -855,7 +855,7 @@ export async function getChartData(period = "7d") {
   const startTime = now - bucketCount * bucketMs;
   const buckets = Array.from({ length: bucketCount }, (_, i) => {
     const ts = startTime + i * bucketMs;
-    return { label: labelFn(ts), tokens: 0, cost: 0, _ts: ts };
+    return { label: labelFn(ts), tokens: 0, cost: 0, success: 0, errors: 0, _ts: ts };
   });
 
   for (const entry of history) {
@@ -865,11 +865,16 @@ export async function getChartData(period = "7d") {
     const promptTokens = entry.tokens?.prompt_tokens || 0;
     const completionTokens = entry.tokens?.completion_tokens || 0;
     buckets[idx].tokens += promptTokens + completionTokens;
-    // Use pre-stored cost if available, else 0
     buckets[idx].cost += entry.cost || 0;
+    const status = (entry.status || "").toLowerCase();
+    if (status === "error" || status === "failed" || status === "fail") {
+      buckets[idx].errors++;
+    } else {
+      buckets[idx].success++;
+    }
   }
 
-  return buckets.map(({ label, tokens, cost }) => ({ label, tokens, cost }));
+  return buckets.map(({ label, tokens, cost, success, errors }) => ({ label, tokens, cost, success, errors }));
 }
 
 /**
@@ -882,26 +887,28 @@ export async function getHourlyActivity() {
   const now = new Date();
   const startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
   
+  const currentHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
+  const firstHour = new Date(currentHour.getTime() - 23 * 60 * 60 * 1000);
+
   const hours = [];
   for (let i = 0; i < 24; i++) {
-    const hourTime = new Date(startTime.getTime() + i * 60 * 60 * 1000);
+    const hourTime = new Date(firstHour.getTime() + i * 60 * 60 * 1000);
     const hourLabel = hourTime.toLocaleTimeString("vi-VN", { hour: "2-digit", hour12: false });
-    hours.push({ hour: hourLabel, requests: 0, _ts: hourTime.getTime() });
+    hours.push({ hour: hourLabel, requests: 0, _ts: hourTime.getTime(), isCurrent: i === 23 });
   }
   
   for (const entry of history) {
     const entryTime = new Date(entry.timestamp).getTime();
-    if (entryTime < startTime.getTime() || entryTime > now.getTime()) continue;
+    if (entryTime < firstHour.getTime() || entryTime > now.getTime()) continue;
     
     const idx = Math.min(
-      Math.floor((entryTime - startTime.getTime()) / (60 * 60 * 1000)),
+      Math.floor((entryTime - firstHour.getTime()) / (60 * 60 * 1000)),
       23
     );
     if (hours[idx]) hours[idx].requests++;
   }
   
-  const currentHourLabel = now.toLocaleTimeString("vi-VN", { hour: "2-digit", hour12: false });
-  return hours.map(({ hour, requests }) => ({ hour, requests, isCurrent: hour === currentHourLabel }));
+  return hours.map(({ hour, requests, isCurrent }) => ({ hour, requests, isCurrent }));
 }
 
 // Re-export request details functions from new SQLite-based module

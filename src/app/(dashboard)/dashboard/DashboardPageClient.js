@@ -179,6 +179,9 @@ export default function DashboardPageClient({ machineId }) {
   const [providerShareData, setProviderShareData] = useState([]);
   const [recentRequests, setRecentRequests] = useState([]);
   const [hourlyActivity, setHourlyActivity] = useState([]);
+  const [successRateData, setSuccessRateData] = useState([]);
+  const [latencyData, setLatencyData] = useState([]);
+  const [costByProviderData, setCostByProviderData] = useState([]);
    
   // Endpoint state
   const [baseUrl, setBaseUrl] = useState("/v1");
@@ -300,6 +303,15 @@ export default function DashboardPageClient({ machineId }) {
       if (hourlyRes.ok) {
         const hourlyData = await hourlyRes.json();
         setHourlyActivity(hourlyData);
+      }
+
+      // Fetch analytics (success rate, latency, cost by provider)
+      const analyticsRes = await fetch("/api/usage/analytics?period=7d");
+      if (analyticsRes.ok) {
+        const analyticsData = await analyticsRes.json();
+        setSuccessRateData(analyticsData.successRate || []);
+        setLatencyData(analyticsData.latency || []);
+        setCostByProviderData(analyticsData.costByProvider || []);
       }
 
       // Fetch settings
@@ -778,6 +790,139 @@ export default function DashboardPageClient({ machineId }) {
       {/* Hourly Activity - full width row */}
       <div className="overflow-hidden">
         <ActivityByHourChart hourlyData={hourlyActivity} />
+      </div>
+
+      {/* Analytics Row — Success Rate + Latency + Cost by Provider */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Success / Error Rate */}
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Success Rate</h3>
+            <div className="flex items-center gap-3 text-xs text-text-muted">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#10b981]" />
+                Success
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
+                Errors
+              </span>
+            </div>
+          </div>
+          {successRateData.length === 0 ? (
+            <div className="h-[250px] flex items-center justify-center text-text-muted text-sm">
+              No data yet
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={successRateData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.5 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.5 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  formatter={(value, name) => {
+                    if (name === "success") return [`${value} success`, "Success"];
+                    return [`${value} errors`, "Errors"];
+                  }}
+                />
+                <Bar dataKey="success" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="errors" stackId="a" fill="#ef4444" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        {/* Average Latency */}
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Avg Latency</h3>
+            <span className="text-xs text-text-muted">ms</span>
+          </div>
+          {latencyData.length === 0 || latencyData.every((d) => d.avgLatency === 0) ? (
+            <div className="h-[250px] flex items-center justify-center text-text-muted text-sm">
+              No latency data yet
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={latencyData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradLatency" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.5 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "currentColor", fillOpacity: 0.5 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => `${v}ms`}
+                  width={55}
+                />
+                <Tooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  formatter={(value) => [`${value}ms`, "Avg Latency"]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="avgLatency"
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  fill="url(#gradLatency)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        {/* Cost by Provider */}
+        <Card className="p-4">
+          <h3 className="font-semibold mb-4">Cost by Provider</h3>
+          {costByProviderData.length === 0 ? (
+            <div className="h-[250px] flex items-center justify-center text-text-muted text-sm">
+              No cost data yet
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {costByProviderData.map((p, i) => {
+                const maxCost = costByProviderData[0]?.cost || 1;
+                const pct = maxCost > 0 ? (p.cost / maxCost) * 100 : 0;
+                const colors = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
+                const color = colors[i % colors.length];
+                return (
+                  <div key={p.name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium text-text-main truncate max-w-[140px]">{p.name}</span>
+                      <span className="text-xs font-mono text-text-muted">${p.cost.toFixed(4)}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-black/[0.04] dark:bg-white/[0.06] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: color }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
       </div>
 
       {/* Bottom Row */}

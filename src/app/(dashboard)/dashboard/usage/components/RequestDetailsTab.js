@@ -249,6 +249,7 @@ export default function RequestDetailsTab() {
               <tr className="border-b border-border bg-black/[0.02] dark:bg-white/[0.02]">
                 <th className="text-left px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Time</th>
                 <th className="text-left px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Model</th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Provider</th>
                 <th className="text-right px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">In</th>
                 <th className="text-right px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Out</th>
                 <th className="text-right px-4 py-2.5 text-[11px] font-medium text-text-muted uppercase tracking-wider">Cost</th>
@@ -292,6 +293,11 @@ export default function RequestDetailsTab() {
                       <td className="px-4 py-2.5">
                         <span className="text-[12px] font-medium text-text-main bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded">
                           {detail.model}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-[12px] text-text-muted">
+                          {getProviderName(detail.provider, providerNameCacheState)}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-right">
