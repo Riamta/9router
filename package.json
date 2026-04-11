@@ -1,6 +1,6 @@
 {
-  "name": "api2k-app",
-  "version": "0.3.73",
+"name": "api2k-app",
+  "version": "0.3.85",
   "description": "Api2K - Universal AI Gateway",
   "private": true,
   "scripts": {
