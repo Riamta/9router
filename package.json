@@ -1,6 +1,6 @@
 {
   "name": "9router",
-  "version": "0.3.85",
+  "version": "0.3.91",
   "description": "9Router - Universal AI Gateway for Code Tools",
   "private": true,
   "bin": {
