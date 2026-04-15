@@ -11,11 +11,11 @@ const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20128";
 const isCloud = typeof caches !== 'undefined' || typeof caches === 'object';
 
 // Get app name - fixed constant to avoid Windows path issues in standalone build
-function getAppName() {
-  return "api2k";
-}
+const APP_NAMES = ["9router", "api2k"];
 
 // Get user data directory based on platform
+// Checks APP_NAMES in order — uses the first directory that has a db.json,
+// or falls back to the primary name (9router)
 function getUserDataDir() {
   if (isCloud) return "/tmp"; // Fallback for Workers
 
@@ -23,14 +23,24 @@ function getUserDataDir() {
 
   const platform = process.platform;
   const homeDir = os.homedir();
-  const appName = getAppName();
+  const primary = APP_NAMES[0]; // "9router"
 
-  if (platform === "win32") {
-    return path.join(process.env.APPDATA || path.join(homeDir, "AppData", "Roaming"), appName);
-  } else {
-    // macOS & Linux: ~/.{appName}
+  const candidates = APP_NAMES.map(appName => {
+    if (platform === "win32") {
+      return path.join(process.env.APPDATA || path.join(homeDir, "AppData", "Roaming"), appName);
+    }
     return path.join(homeDir, `.${appName}`);
+  });
+
+  // Use the first candidate that already has a db.json
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, "db.json"))) {
+      return dir;
+    }
   }
+
+  // No existing data found — use primary name
+  return candidates[0];
 }
 
 // Data file path - stored in user home directory
@@ -62,6 +72,7 @@ const defaultData = {
     comboStrategy: "fallback",
     comboStrategies: {},
     requireLogin: true,
+    tunnelDashboardAccess: true,
     observabilityEnabled: true,
     observabilityMaxRecords: 1000,
     observabilityBatchSize: 20,
@@ -99,6 +110,7 @@ function cloneDefaultData() {
       comboStrategy: "fallback",
       comboStrategies: {},
       requireLogin: true,
+      tunnelDashboardAccess: true,
       observabilityEnabled: true,
       observabilityMaxRecords: 1000,
       observabilityBatchSize: 20,
@@ -494,6 +506,7 @@ export async function createProxyPool(data) {
     name: data.name,
     proxyUrl: data.proxyUrl,
     noProxy: data.noProxy || "",
+    type: data.type || "http",
     isActive: data.isActive !== undefined ? data.isActive : true,
     strictProxy: data.strictProxy === true,
     testStatus: data.testStatus || "unknown",

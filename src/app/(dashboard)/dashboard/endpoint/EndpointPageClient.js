@@ -22,6 +22,9 @@ export default function APIPageClient({ machineId }) {
   const [createdKey, setCreatedKey] = useState(null);
 
   const [requireApiKey, setRequireApiKey] = useState(false);
+  const [requireLogin, setRequireLogin] = useState(true);
+  const [hasPassword, setHasPassword] = useState(true);
+  const [tunnelDashboardAccess, setTunnelDashboardAccess] = useState(false);
 
   // Cloudflare Tunnel state
   const [tunnelChecking, setTunnelChecking] = useState(true);
@@ -74,6 +77,9 @@ export default function APIPageClient({ machineId }) {
       if (settingsRes.ok) {
         const data = await settingsRes.json();
         setRequireApiKey(data.requireApiKey || false);
+        setRequireLogin(data.requireLogin !== false);
+        setHasPassword(data.hasPassword || false);
+        setTunnelDashboardAccess(data.tunnelDashboardAccess || false);
       }
       if (statusRes.ok) {
         const data = await statusRes.json();
@@ -115,8 +121,8 @@ export default function APIPageClient({ machineId }) {
           // Ping once to verify reachable
           const healthUrl = `${tPublicUrl || tUrl}/api/health`;
           try {
-            const ping = await fetch(healthUrl, { mode: "no-cors", cache: "no-store" });
-            if (ping.ok || ping.type === "opaque") {
+            const ping = await fetch(healthUrl, { cache: "no-store" });
+            if (ping.ok) {
               setTunnelEnabled(true);
             } else {
               pingTunnelHealth(tPublicUrl || tUrl);
@@ -132,6 +138,19 @@ export default function APIPageClient({ machineId }) {
       console.log("Error loading settings:", error);
     } finally {
       setTunnelChecking(false);
+    }
+  };
+
+  const handleTunnelDashboardAccess = async (value) => {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tunnelDashboardAccess: value }),
+      });
+      if (res.ok) setTunnelDashboardAccess(value);
+    } catch (error) {
+      console.log("Error updating tunnelDashboardAccess:", error);
     }
   };
 
@@ -607,10 +626,19 @@ export default function APIPageClient({ machineId }) {
                 </button>
               </>
             ) : tunnelLoading ? (
-              <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
-                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                {tunnelProgress || "Creating tunnel..."}
-              </div>
+              <>
+                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  {tunnelProgress || "Creating tunnel..."}
+                </div>
+                <button
+                  onClick={() => { setTunnelLoading(false); setTunnelProgress(""); }}
+                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
+                  title="Stop"
+                >
+                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                </button>
+              </>
             ) : tunnelStatus?.type === "error" ? (
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
@@ -620,10 +648,19 @@ export default function APIPageClient({ machineId }) {
                 <Button size="sm" icon="cloud_upload" onClick={() => setShowEnableTunnelModal(true)}>Enable</Button>
               </>
             ) : tunnelChecking ? (
-              <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-text-muted">
-                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                Checking...
-              </div>
+              <>
+                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  Checking...
+                </div>
+                <button
+                  onClick={() => setTunnelChecking(false)}
+                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
+                  title="Stop"
+                >
+                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                </button>
+              </>
             ) : (
               <Button
                 size="sm"
@@ -664,10 +701,19 @@ export default function APIPageClient({ machineId }) {
                 </button>
               </>
             ) : (tsLoading || tsConnecting) ? (
-              <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
-                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                {tsProgress || "Connecting..."}
-              </div>
+              <>
+                <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-border bg-input text-sm text-text-muted">
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  {tsProgress || "Connecting..."}
+                </div>
+                <button
+                  onClick={() => { setTsLoading(false); setTsConnecting(false); setTsProgress(""); }}
+                  className="p-2 hover:bg-red-500/10 rounded text-red-500 transition-colors shrink-0"
+                  title="Stop"
+                >
+                  <span className="material-symbols-outlined text-[18px]">power_settings_new</span>
+                </button>
+              </>
             ) : tsStatus?.type === "error" ? (
               <>
                 <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded border border-red-300 dark:border-red-800 bg-red-500/5 text-sm text-red-600 dark:text-red-400">
@@ -688,10 +734,49 @@ export default function APIPageClient({ machineId }) {
             )}
           </div>
         </div>
+
+        {/* Security warnings when tunnel or tailscale is active */}
+        {(tunnelEnabled || tsEnabled) && (
+          <div className="mt-4 flex flex-col gap-2">
+            {!requireApiKey && (
+              <SecurityWarning
+                message="Require API key is disabled — your endpoint is publicly accessible without authentication."
+                action={{ label: "Enable", href: "#require-api-key" }}
+              />
+            )}
+            {(!requireLogin || !hasPassword) && (
+              <SecurityWarning
+                message={
+                  !requireLogin
+                    ? "Require login is disabled — anyone can access your dashboard via tunnel."
+                    : "Dashboard uses the default password — change it in Profile settings."
+                }
+                action={{
+                  label: !requireLogin ? "Enable" : "Change password",
+                  href: "/dashboard/profile",
+                }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Tunnel dashboard access option */}
+        {(tunnelEnabled || tsEnabled) && (
+          <div className="mt-4 pt-4 border-t border-border flex items-center gap-3">
+            <Toggle
+              checked={tunnelDashboardAccess}
+              onChange={() => handleTunnelDashboardAccess(!tunnelDashboardAccess)}
+            />
+            <div className="flex items-center gap-1.5">
+              <p className="font-medium text-sm">Allow dashboard access via tunnel</p>
+              <Tooltip text="When enabled, the dashboard can be accessed through your tunnel or Tailscale URL (login still required). When disabled, dashboard access via tunnel/Tailscale is completely blocked." />
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* API Keys */}
-      <Card>
+      <Card id="require-api-key">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">API Keys</h2>
           <Button icon="add" onClick={() => setShowAddModal(true)}>
@@ -1059,6 +1144,40 @@ function StatusAlert({ status, className = "" }) {
           "bg-red-500/10 text-red-600 dark:text-red-400"
       }`}>
       {renderMessage(status.message)}
+    </div>
+  );
+}
+
+/** Inline tooltip, Claude Code CLI style */
+function Tooltip({ text }) {
+  return (
+    <span className="relative group inline-flex items-center">
+      <span className="material-symbols-outlined text-[14px] text-text-muted cursor-help">help</span>
+      <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 z-50 w-64 rounded bg-gray-900 dark:bg-gray-800 text-white text-xs px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+/** Security warning banner with optional action link */
+function SecurityWarning({ message, action }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
+      <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5">warning</span>
+      <p className="text-xs flex-1">{message}</p>
+      {action && (
+        <a
+          href={action.href}
+          className="text-xs font-medium underline shrink-0 hover:opacity-80"
+          onClick={action.href.startsWith("#") ? (e) => {
+            e.preventDefault();
+            document.getElementById(action.href.slice(1))?.scrollIntoView({ behavior: "smooth" });
+          } : undefined}
+        >
+          {action.label}
+        </a>
+      )}
     </div>
   );
 }

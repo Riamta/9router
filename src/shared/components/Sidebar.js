@@ -10,7 +10,7 @@ import { MEDIA_PROVIDER_KINDS } from "@/shared/constants/providers";
 import Button from "./Button";
 import { ConfirmModal } from "./Modal";
 
-const VISIBLE_MEDIA_KINDS = ["embedding", "tts"];
+const VISIBLE_MEDIA_KINDS = ["embedding", "audio"];
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" },

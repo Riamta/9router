@@ -1,16 +1,46 @@
 {
-"name": "api2k-app",
+  "name": "9router",
   "version": "0.3.85",
-  "description": "Api2K - Universal AI Gateway",
+  "description": "9Router - Universal AI Gateway for Code Tools",
   "private": true,
+  "bin": {
+    "9router": "cli.js"
+  },
+  "files": [
+    "cli.js",
+    "app/",
+    "hooks/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "next dev --webpack --port 20129",
     "build": "NODE_ENV=production next build --webpack",
     "start": "NODE_ENV=production next start",
+    "build:cli": "node scripts/prepublish.mjs",
+    "prepublishOnly": "npm run build:cli",
+    "postinstall": "node hooks/postinstall.js",
     "dev:bun": "bun --bun next dev --webpack --port 20129",
     "build:bun": "NODE_ENV=production bun --bun next build --webpack",
     "start:bun": "NODE_ENV=production bun ./.next/standalone/server.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "ai",
+    "router",
+    "proxy",
+    "openai",
+    "claude",
+    "gemini",
+    "fallback",
+    "cursor",
+    "cline",
+    "codex",
+    "9router"
+  ],
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.12",

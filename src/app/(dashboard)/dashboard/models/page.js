@@ -15,6 +15,7 @@ export default function ModelsPage() {
   const [selectedProvider, setSelectedProvider] = useState("all");
   const [viewMode, setViewMode] = useState("list");
   const [providers, setProviders] = useState([]);
+  const [providerNames, setProviderNames] = useState({});
   
   // Custom prices state (provider -> model -> price)
   const [customPrices, setCustomPrices] = useState({});
@@ -60,9 +61,16 @@ export default function ModelsPage() {
       const data = await res.json();
       setModels(data.models || []);
 
-      // Extract unique providers
+      // Extract unique providers and their display names
       const uniqueProviders = [...new Set(data.models?.map(m => m.provider) || [])];
       setProviders(uniqueProviders);
+      const nameMap = {};
+      for (const m of (data.models || [])) {
+        if (m.providerName && m.provider && m.providerName !== m.provider) {
+          nameMap[m.provider] = m.providerName;
+        }
+      }
+      setProviderNames(nameMap);
     } catch (error) {
       console.error("Failed to fetch models:", error);
     } finally {
@@ -324,7 +332,7 @@ export default function ModelsPage() {
         >
           <option value="all">All Providers</option>
           {providers.map((provider) => (
-            <option key={provider} value={provider}>{provider}</option>
+            <option key={provider} value={provider}>{providerNames[provider] || provider}</option>
           ))}
         </select>
       </div>
@@ -541,7 +549,7 @@ function ModelCard({ model, viewMode, formatPrice, getPrice, onEdit, hasCustomPr
         {/* Provider */}
         <div className="flex justify-center">
           <span className="text-[11px] font-medium text-text-muted bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded-full truncate max-w-full">
-            {model.provider}
+            {model.providerName || model.provider}
           </span>
         </div>
 
@@ -617,7 +625,7 @@ function ModelCard({ model, viewMode, formatPrice, getPrice, onEdit, hasCustomPr
             </div>
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-text-main truncate">{model.id}</h3>
-              <span className="text-[11px] text-text-muted">{model.provider}</span>
+              <span className="text-[11px] text-text-muted">{model.providerName || model.provider}</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">

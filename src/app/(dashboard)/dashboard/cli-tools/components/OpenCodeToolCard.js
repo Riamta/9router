@@ -12,15 +12,13 @@ export default function OpenCodeToolCard({ tool, isExpanded, onToggle, baseUrl, 
   const [message, setMessage] = useState(null);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [selectedApiKey, setSelectedApiKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
-  const [subagentModel, setSubagentModel] = useState("");
+  const [selectedModels, setSelectedModels] = useState([]);
+  const [defaultModel, setDefaultModel] = useState("");
+  const [editingSlot, setEditingSlot] = useState(-1);
   const [modalOpen, setModalOpen] = useState(false);
-  const [subagentModalOpen, setSubagentModalOpen] = useState(false);
   const [modelAliases, setModelAliases] = useState({});
   const [showManualConfigModal, setShowManualConfigModal] = useState(false);
   const [customBaseUrl, setCustomBaseUrl] = useState("");
-  const [selectedModels, setSelectedModels] = useState([]);
-  const [activeModel, setActiveModel] = useState("");
 
   useEffect(() => {
     if (apiKeys?.length > 0 && !selectedApiKey) {
@@ -42,17 +40,19 @@ export default function OpenCodeToolCard({ tool, isExpanded, onToggle, baseUrl, 
 
   // Sync models from existing config
   useEffect(() => {
-if (status?.opencode?.models) {
-      setSelectedModels(status.opencode.models);
-    }
-    if (status?.opencode?.activeModel) {
-      setActiveModel(status.opencode.activeModel);
-    }
-    
-    // Parse subagent settings from agent.explorer if exists
-    if (status?.config?.agent?.explorer?.model?.startsWith("api2k/")) {
-      setSubagentModel(status.config.agent.explorer.model.replace("api2k/", ""));
-    }
+    if (status?.config?.provider?.["api2k"]?.models) {
+      const models = status.config.provider["api2k"].models;
+      const modelIds = Object.keys(models);
+      setSelectedModels(modelIds);
+      if (status.config.model?.startsWith("api2k/")) {
+        setDefaultModel(status.config.model.replace("api2k/", ""));
+      } else if (modelIds.length > 0) {
+        setDefaultModel(modelIds[0]);
+      }
+    } else if (status?.config?.model?.startsWith("api2k/")) {
+      const m = status.config.model.replace("api2k/", "");
+      setSelectedModels([m]);
+      setDefaultModel(m);
     }
   }, [status]);
 
@@ -104,16 +104,13 @@ if (status?.opencode?.models) {
         ? selectedApiKey
         : (!cloudEnabled ? "sk_api2k" : selectedApiKey);
 
+      const validModels = selectedModels.filter((m) => m.trim());
+      const effectiveDefault = defaultModel || validModels[0] || "";
+
       const res = await fetch("/api/cli-tools/opencode-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          baseUrl: getEffectiveBaseUrl(), 
-          apiKey: keyToUse, 
-          models: selectedModels,
-          activeModel: activeModel === "" ? "" : (activeModel || selectedModels[0]),
-          subagentModel: subagentModel
-        }),
+        body: JSON.stringify({ baseUrl: getEffectiveBaseUrl(), apiKey: keyToUse, models: validModels, defaultModel: effectiveDefault }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -137,10 +134,8 @@ if (status?.opencode?.models) {
       const data = await res.json();
       if (res.ok) {
         setMessage({ type: "success", text: "Settings reset successfully!" });
-        setSelectedModel("");
-        setSubagentModel("");
         setSelectedModels([]);
-        setActiveModel("");
+        setDefaultModel("");
         checkStatus();
       } else {
         setMessage({ type: "error", text: data.error || "Failed to reset settings" });
@@ -157,34 +152,30 @@ if (status?.opencode?.models) {
       ? selectedApiKey
       : (!cloudEnabled ? "sk_api2k" : "<API_KEY_FROM_DASHBOARD>");
 
-    const modelsToShow = selectedModels.length > 0 ? selectedModels : ["provider/model-id"];
-    const activeModelToShow = activeModel || selectedModels[0] || modelsToShow[0];
-    const effectiveSubagentModel = subagentModel || activeModelToShow;
-
+    const validModels = selectedModels.filter((m) => m.trim());
     const modelsObj = {};
-    modelsToShow.forEach(m => {
-      modelsObj[m] = { name: m };
-    });
+    if (validModels.length > 0) {
+      validModels.forEach((m) => {
+        modelsObj[m] = { name: m };
+      });
+    } else {
+      modelsObj["provider/model-id"] = { name: "provider/model-id" };
+    }
+
+    const config = {
+      provider: {
+        api2k: {
+          npm: "@ai-sdk/openai-compatible",
+          options: { baseURL: getEffectiveBaseUrl(), apiKey: keyToUse },
+          models: modelsObj,
+        },
+      },
+      model: `api2k/${defaultModel || validModels[0] || "provider/model-id"}`,
+    };
 
     return [{
       filename: "~/.config/opencode/opencode.json",
-      content: JSON.stringify({
-        provider: {
-          "api2k": {
-            npm: "@ai-sdk/openai-compatible",
-            options: { baseURL: getEffectiveBaseUrl(), apiKey: keyToUse },
-            models: modelsObj,
-          },
-        },
-model: `api2k/${activeModelToShow}`,
-        agent: {
-          explorer: {
-            description: "Fast explorer subagent for codebase exploration",
-            mode: "subagent",
-            model: `api2k/${effectiveSubagentModel}`
-          }
-        }
-      }, null, 2),
+      content: JSON.stringify(config, null, 2),
     }];
   };
 
@@ -293,111 +284,68 @@ model: `api2k/${activeModelToShow}`,
                 </div>
 
                 {/* Models */}
-                <div className="flex items-start gap-2">
-                  <span className="w-32 shrink-0 text-sm font-semibold text-text-main text-right pt-1">Models</span>
-                  <span className="material-symbols-outlined text-text-muted text-[14px] mt-1.5">arrow_forward</span>
-                  <div className="flex-1 flex flex-col gap-2">
-                    <div className="flex flex-wrap gap-1.5 min-h-[28px] px-2 py-1.5 bg-surface rounded border border-border">
-                      {selectedModels.length === 0 ? (
-                        <span className="text-xs text-text-muted">No models selected</span>
-                      ) : (
-                        selectedModels.map((model) => (
-                          <span
-                            key={model}
-                            onClick={async () => {
-                              if (model === activeModel) {
-                                try {
-                                  const res = await fetch("/api/cli-tools/opencode-settings", {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ clearActiveModel: true }),
-                                  });
-                                  if (res.ok) {
-                                    setActiveModel("");
-                                    checkStatus();
-                                  }
-                                } catch (error) {
-                                  console.log("Error clearing active model:", error);
-                                }
-                              } else {
-                                setActiveModel(model);
-                              }
-                            }}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer transition-colors ${
-                              model === activeModel
-                                ? "bg-primary/10 text-primary border border-primary"
-                                : "bg-black/5 dark:bg-white/5 text-text-muted border border-transparent hover:border-border"
-                            }`}
-                            title={model === activeModel ? "Click to clear active model" : "Click to set as active"}
-                          >
-                            {model === activeModel && <span className="material-symbols-outlined text-[10px]">star</span>}
-                            {model}
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  const res = await fetch(`/api/cli-tools/opencode-settings?model=${encodeURIComponent(model)}`, { method: "DELETE" });
-                                  if (res.ok) {
-                                    const newModels = selectedModels.filter((m) => m !== model);
-                                    setSelectedModels(newModels);
-                                    if (activeModel === model) {
-                                      setActiveModel("");
-                                    }
-                                    checkStatus();
-                                  }
-                                } catch (error) {
-                                  console.log("Error removing model:", error);
-                                }
-                              }}
-                              className="ml-0.5 hover:text-red-500"
-                            >
-                              <span className="material-symbols-outlined text-[12px]">close</span>
-                            </button>
-                          </span>
-                        ))
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => setModalOpen(true)} disabled={!activeProviders?.length} className={`px-2 py-1 rounded border text-xs transition-colors ${activeProviders?.length ? "bg-surface border-border text-text-main hover:border-primary cursor-pointer" : "opacity-50 cursor-not-allowed border-border"}`}>Add Model</button>
-                      <span className="text-xs text-text-muted">
-                        {selectedModels.length > 0 && activeModel ? (
-                          <>Active: <span className="text-primary">{activeModel}</span></>
-                        ) : selectedModels.length > 0 ? (
-                          <span className="text-yellow-500">Click a model to set/clear active</span>
-                        ) : (
-                          "Select models to add"
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Subagent Model */}
-                <div className="flex items-center gap-2">
-                  <span className="w-32 shrink-0 text-sm font-semibold text-text-main text-right">Subagent Model</span>
-                  <span className="material-symbols-outlined text-text-muted text-[14px]">arrow_forward</span>
-                  <input 
-                    type="text" 
-                    value={subagentModel} 
-                    onChange={(e) => setSubagentModel(e.target.value)} 
-                    placeholder={selectedModel || "provider/model-id (defaults to main model)"} 
-                    className="flex-1 px-2 py-1.5 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" 
-                  />
-                  <button 
-                    onClick={() => setSubagentModalOpen(true)} 
-                    disabled={!activeProviders?.length} 
-                    className={`px-2 py-1.5 rounded border text-xs transition-colors shrink-0 whitespace-nowrap ${activeProviders?.length ? "bg-surface border-border text-text-main hover:border-primary cursor-pointer" : "opacity-50 cursor-not-allowed border-border"}`}
-                  >
-                    Select Model
-                  </button>
-                  {subagentModel && (
-                    <button 
-                      onClick={() => setSubagentModel("")} 
-                      className="p-1 text-text-muted hover:text-red-500 rounded transition-colors" 
-                      title="Clear (will use main model)"
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-32 shrink-0 text-sm font-semibold text-text-main text-right">Models</span>
+                    <span className="material-symbols-outlined text-text-muted text-[14px]">arrow_forward</span>
+                    <button
+                      onClick={() => {
+                        setSelectedModels((prev) => [...prev, ""]);
+                        setEditingSlot(selectedModels.length);
+                        setModalOpen(true);
+                      }}
+                      disabled={!activeProviders?.length}
+                      className={`px-2 py-1.5 rounded border text-xs transition-colors shrink-0 whitespace-nowrap ${activeProviders?.length ? "bg-surface border-border text-text-main hover:border-primary cursor-pointer" : "opacity-50 cursor-not-allowed border-border"}`}
                     >
-                      <span className="material-symbols-outlined text-[14px]">close</span>
+                      <span className="material-symbols-outlined text-[14px] mr-0.5 align-middle">add</span>Add Model
                     </button>
+                  </div>
+                  {selectedModels.length > 0 && (
+                    <div className="flex flex-col gap-1.5" style={{ marginLeft: "8.5rem" }}>
+                      {selectedModels.map((model, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => setDefaultModel(model)}
+                            className={`p-0.5 rounded transition-colors shrink-0 flex items-center justify-center w-5 h-5 ${model === defaultModel && model ? "" : "opacity-0 hover:opacity-100 focus:opacity-100"}`}
+                            title={model === defaultModel && model ? "Default model" : "Set as default"}
+                            disabled={!model}
+                          >
+                            <span className={`block rounded-full ${model === defaultModel && model ? "w-2 h-2 bg-emerald-500 animate-pulse" : "w-1.5 h-1.5 bg-text-muted"}`} />
+                          </button>
+                          <input
+                            type="text"
+                            value={model}
+                            onChange={(e) => {
+                              const newModels = [...selectedModels];
+                              newModels[idx] = e.target.value;
+                              setSelectedModels(newModels);
+                              if (defaultModel === model) setDefaultModel(e.target.value);
+                            }}
+                            placeholder="provider/model-id"
+                            className="flex-1 px-2 py-1.5 bg-surface rounded border border-border text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          />
+                          <button
+                            onClick={() => { setEditingSlot(idx); setModalOpen(true); }}
+                            disabled={!activeProviders?.length}
+                            className="px-2 py-1.5 rounded border text-xs transition-colors shrink-0 whitespace-nowrap bg-surface border-border text-text-main hover:border-primary cursor-pointer"
+                          >Select</button>
+                          <button
+                            onClick={() => {
+                              const removed = selectedModels[idx];
+                              const newModels = selectedModels.filter((_, i) => i !== idx);
+                              setSelectedModels(newModels);
+                              if (defaultModel === removed) setDefaultModel(newModels[0] || "");
+                              if (editingSlot > idx) setEditingSlot((prev) => prev - 1);
+                              else if (editingSlot === idx) setEditingSlot(newModels.length > 0 ? Math.min(idx, newModels.length - 1) : -1);
+                            }}
+                            className="p-0.5 text-text-muted hover:text-red-500 rounded transition-colors shrink-0"
+                            title="Remove"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">close</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -410,7 +358,7 @@ model: `api2k/${activeModelToShow}`,
               )}
 
               <div className="flex items-center gap-2">
-                <Button variant="primary" size="sm" onClick={handleApply} disabled={selectedModels.length === 0} loading={applying}>
+                <Button variant="primary" size="sm" onClick={handleApply} disabled={selectedModels.filter((m) => m.trim()).length === 0} loading={applying}>
                   <span className="material-symbols-outlined text-[14px] mr-1">save</span>Apply
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleReset} disabled={!status.hasApi2K} loading={restoring}>
@@ -428,27 +376,21 @@ model: `api2k/${activeModelToShow}`,
       <ModelSelectModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSelect={(model) => { 
-          if (!selectedModels.includes(model.value)) {
-            setSelectedModels([...selectedModels, model.value]);
-            if (!activeModel) setActiveModel(model.value);
+        onSelect={(model) => {
+          const newModels = [...selectedModels];
+          if (editingSlot >= 0 && editingSlot < newModels.length) {
+            const oldModel = newModels[editingSlot];
+            newModels[editingSlot] = model.value;
+            if (defaultModel === oldModel) setDefaultModel(model.value);
+            else if (!defaultModel) setDefaultModel(model.value);
           }
+          setSelectedModels(newModels);
           setModalOpen(false);
         }}
-        selectedModel={null}
+        selectedModel={editingSlot >= 0 ? selectedModels[editingSlot] : defaultModel}
         activeProviders={activeProviders}
         modelAliases={modelAliases}
-        title="Add Model for OpenCode"
-      />
-
-      <ModelSelectModal
-        isOpen={subagentModalOpen}
-        onClose={() => setSubagentModalOpen(false)}
-        onSelect={(model) => { setSubagentModel(model.value); setSubagentModalOpen(false); }}
-        selectedModel={subagentModel}
-        activeProviders={activeProviders}
-        modelAliases={modelAliases}
-        title="Select Subagent Model for OpenCode"
+        title={editingSlot >= 0 ? `Select Model (Slot ${editingSlot + 1})` : "Select Model for OpenCode"}
       />
 
       <ManualConfigModal

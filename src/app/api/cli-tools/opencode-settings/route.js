@@ -61,7 +61,7 @@ export async function GET() {
     }
 
     const config = await readConfig();
-    const providerConfig = config?.provider?.["9router"];
+    const providerConfig = config?.provider?.["api2k"];
     const modelMap = providerConfig?.models || {};
 
     return NextResponse.json({
@@ -69,11 +69,11 @@ export async function GET() {
       config,
       hasApi2K: hasApi2KConfig(config),
       configPath: getConfigPath(),
-        opencode: {
-          models: Object.keys(modelMap),
-          activeModel: config?.model?.startsWith("9router/") ? config.model.replace(/^9router\//, "") : null,
-          baseURL: providerConfig?.options?.baseURL || null,
-        },
+      opencode: {
+        models: Object.keys(modelMap),
+        defaultModel: config?.model?.startsWith("api2k/") ? config.model.replace(/^api2k\//, "") : null,
+        baseURL: providerConfig?.options?.baseURL || null,
+      },
     });
   } catch (error) {
     console.log("Error checking opencode settings:", error);
@@ -84,10 +84,11 @@ export async function GET() {
 // POST - Apply Api2K as openai-compatible provider (multi-model support)
 export async function POST(request) {
   try {
-    const { baseUrl, apiKey, model, models, activeModel, subagentModel } = await request.json();
+    const { baseUrl, apiKey, model, models, defaultModel, subagentModel } = await request.json();
 
     // Accept either `model` (string, legacy) or `models` (array of strings)
     const modelsArray = Array.isArray(models) ? models.slice() : (typeof model === "string" ? [model] : []);
+    const effectiveDefault = defaultModel || modelsArray[0] || "";
 
     if (!baseUrl || modelsArray.length === 0) {
       return NextResponse.json({ error: "baseUrl and at least one model are required" }, { status: 400 });
@@ -106,52 +107,50 @@ export async function POST(request) {
     } catch { /* No existing config */ }
 
     const normalizedBaseUrl = baseUrl.endsWith("/v1") ? baseUrl : `${baseUrl}/v1`;
-const keyToUse = apiKey || "sk_api2k";
-    const effectiveSubagentModel = subagentModel || modelsArray[0];
+    const keyToUse = apiKey || "sk_api2k";
+    const effectiveSubagentModel = subagentModel || effectiveDefault;
 
-    // Ensure provider object
+    // Build models object
+    const modelsObj = {};
+    modelsArray.forEach((m) => {
+      if (m && typeof m === "string") {
+        modelsObj[m] = { name: m };
+      }
+    });
+
+    // Merge api2k provider
     if (!config.provider) config.provider = {};
 
-    // Preserve any existing api2k provider entry and its models
+    // Preserve existing api2k provider and merge models
     const existingProvider = config.provider["api2k"] || { npm: "@ai-sdk/openai-compatible", options: {}, models: {} };
-
-    // Merge options (overwrite baseURL/apiKey)
     existingProvider.options = {
       ...existingProvider.options,
       baseURL: normalizedBaseUrl,
       apiKey: keyToUse,
     };
-
-    // Ensure models map exists
     existingProvider.models = existingProvider.models || {};
-
-    // Add or update entries for all requested models
     for (const m of modelsArray) {
       if (!m || typeof m !== "string") continue;
       existingProvider.models[m] = { name: m };
     }
-
-    // Save merged provider back
     config.provider["api2k"] = existingProvider;
 
-    // Set the active model: prefer explicit activeModel, else first of modelsArray
-    // If activeModel is explicitly empty string, clear the model
-    if (activeModel === "") {
-      config.model = "";
-    } else {
-      const finalActive = activeModel || modelsArray[0];
-      if (finalActive) {
-        config.model = `api2k/${finalActive}`;
+    // Set active model
+    if (!config.model || config.model.startsWith("api2k/")) {
+      if (effectiveDefault) {
+        config.model = `api2k/${effectiveDefault}`;
       }
     }
 
-    // Add subagent configuration
-    if (!config.agent) config.agent = {};
-    config.agent.explorer = {
-      description: "Fast explorer subagent for codebase exploration",
-      mode: "subagent",
-      model: `api2k/${effectiveSubagentModel}`,
-    };
+    // Add subagent configuration if provided
+    if (subagentModel) {
+      if (!config.agent) config.agent = {};
+      config.agent.explorer = {
+        description: "Fast explorer subagent for codebase exploration",
+        mode: "subagent",
+        model: `api2k/${effectiveSubagentModel}`,
+      };
+    }
 
     await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 
@@ -220,10 +219,10 @@ export async function DELETE(request) {
       throw error;
     }
 
-// If specific model provided, remove just that model
+    // If specific model provided, remove just that model
     if (modelToRemove && config.provider?.["api2k"]?.models) {
       delete config.provider["api2k"].models[modelToRemove];
-      
+
       // If no models left, remove the provider
       if (Object.keys(config.provider["api2k"].models).length === 0) {
         delete config.provider["api2k"];
@@ -250,7 +249,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({
       success: true,
-message: modelToRemove ? `Model "${modelToRemove}" removed` : "Api2K settings removed from OpenCode",
+      message: modelToRemove ? `Model "${modelToRemove}" removed` : "Api2K settings removed from OpenCode",
     });
   } catch (error) {
     console.log("Error resetting opencode settings:", error);
