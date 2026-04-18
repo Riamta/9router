@@ -363,6 +363,7 @@ export default function ProvidersPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Object.entries(APIKEY_PROVIDERS)
+            .filter(([, info]) => (info.serviceKinds ?? ["llm"]).includes("llm"))
             .map(([key, info]) => (
               <ApiKeyProviderCard
                 key={key}
