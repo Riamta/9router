@@ -7,6 +7,11 @@ export const APP_CONFIG = {
   version: pkg.version,
 };
 
+// GitHub configuration
+export const GITHUB_CONFIG = {
+  changelogUrl: "https://raw.githubusercontent.com/decolua/9router/refs/heads/master/CHANGELOG.md",
+};
+
 // Theme configuration
 export const THEME_CONFIG = {
   storageKey: "theme",

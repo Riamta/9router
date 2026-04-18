@@ -2,40 +2,13 @@ import { Low } from "lowdb";
 import { JSONFile } from "lowdb/node";
 import { v4 as uuidv4 } from "uuid";
 import path from "node:path";
-import os from "node:os";
 import fs from "node:fs";
 import lockfile from "proper-lockfile";
+import { DATA_DIR } from "@/lib/dataDir.js";
 
 const DEFAULT_MITM_ROUTER_BASE = "http://localhost:20128";
 const isCloud = typeof caches !== 'undefined' || typeof caches === 'object';
 
-const APP_NAMES = ["9router", "api2k"];
-
-function getUserDataDir() {
-  if (isCloud) return "/tmp";
-  if (process.env.DATA_DIR) return process.env.DATA_DIR;
-
-  const platform = process.platform;
-  const homeDir = os.homedir();
-  const primary = APP_NAMES[0];
-
-  const candidates = APP_NAMES.map(appName => {
-    if (platform === "win32") {
-      return path.join(process.env.APPDATA || path.join(homeDir, "AppData", "Roaming"), appName);
-    }
-    return path.join(homeDir, `.${appName}`);
-  });
-
-  for (const dir of candidates) {
-    if (fs.existsSync(path.join(dir, "db.json"))) {
-      return dir;
-    }
-  }
-
-  return candidates[0];
-}
-
-const DATA_DIR = getUserDataDir();
 const DB_FILE = isCloud ? null : path.join(DATA_DIR, "db.json");
 
 if (!isCloud && !fs.existsSync(DATA_DIR)) {
@@ -153,8 +126,8 @@ class LocalMutex {
       return () => this._release();
     }
     return new Promise((resolve) => {
-      this._queue.push(resolve);
-    }).then(() => () => this._release());
+      this._queue.push(() => resolve(() => this._release()));
+    });
   }
 
   _release() {
