@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Card from "@/shared/components/Card";
 import Button from "@/shared/components/Button";
 import Modal from "@/shared/components/Modal";
@@ -103,6 +103,8 @@ function statusBg(status) {
   return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
 }
 
+const AUTO_REFRESH_INTERVAL = 30000;
+
 export default function RequestDetailsTab() {
   const [details, setDetails] = useState([]);
   const [pagination, setPagination] = useState({
@@ -121,6 +123,11 @@ export default function RequestDetailsTab() {
     startDate: "",
     endDate: ""
   });
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [countdown, setCountdown] = useState(30);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const intervalRef = useRef(null);
+  const countdownRef = useRef(null);
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -151,6 +158,7 @@ export default function RequestDetailsTab() {
 
       setDetails(data.details || []);
       setPagination(prev => ({ ...prev, ...data.pagination }));
+      setLastUpdated(new Date());
     } catch (error) {
       console.error("Failed to fetch request details:", error);
     } finally {
@@ -165,6 +173,43 @@ export default function RequestDetailsTab() {
   useEffect(() => {
     fetchDetails();
   }, [fetchDetails]);
+
+  // Auto-refresh interval
+  useEffect(() => {
+    if (!autoRefresh) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      intervalRef.current = null;
+      countdownRef.current = null;
+      return;
+    }
+    intervalRef.current = setInterval(() => {
+      fetchDetails();
+      setCountdown(30);
+    }, AUTO_REFRESH_INTERVAL);
+    countdownRef.current = setInterval(() => {
+      setCountdown((prev) => (prev <= 1 ? 30 : prev - 1));
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [autoRefresh, fetchDetails]);
+
+  // Pause when tab hidden
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (countdownRef.current) clearInterval(countdownRef.current);
+      } else if (autoRefresh) {
+        intervalRef.current = setInterval(() => { fetchDetails(); setCountdown(30); }, AUTO_REFRESH_INTERVAL);
+        countdownRef.current = setInterval(() => setCountdown((p) => (p <= 1 ? 30 : p - 1)), 1000);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [autoRefresh, fetchDetails]);
 
   const handleViewDetail = (detail) => {
     setSelectedDetail(detail);
@@ -190,8 +235,43 @@ export default function RequestDetailsTab() {
 
   const hasActiveFilters = filters.provider || filters.startDate || filters.endDate;
 
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return "Never";
+    const diffMs = Date.now() - lastUpdated;
+    const s = Math.floor(diffMs / 1000);
+    if (s < 60) return `${s}s ago`;
+    return `${Math.floor(s / 60)}m ago`;
+  };
+
   return (
     <div className="flex flex-col gap-5">
+      {/* Top bar: filters + refresh controls */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <span className="text-xs text-text-muted">Last updated: {formatLastUpdated()}</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setAutoRefresh((prev) => !prev)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm"
+            title={autoRefresh ? "Disable auto-refresh" : "Enable auto-refresh"}
+          >
+            <span className={`material-symbols-outlined text-[16px] ${autoRefresh ? "text-primary" : "text-text-muted"}`}>
+              {autoRefresh ? "toggle_on" : "toggle_off"}
+            </span>
+            <span className="text-text-main">Auto</span>
+            {autoRefresh && <span className="text-text-muted text-xs">{countdown}s</span>}
+          </button>
+          <button
+            onClick={() => { fetchDetails(); setCountdown(30); }}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-sm disabled:opacity-50"
+            title="Refresh now"
+          >
+            <span className={`material-symbols-outlined text-[16px] text-text-main ${loading ? "animate-spin" : ""}`}>refresh</span>
+            <span className="text-text-main">Refresh</span>
+          </button>
+        </div>
+      </div>
+
       {/* Filters — compact inline bar */}
       <div className="flex items-end gap-3 flex-wrap">
         <div className="flex flex-col gap-1">

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Card, Button, Input, Toggle, CardSkeleton } from "@/shared/components";
 import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
+import { AI_PROVIDERS } from "@/shared/constants/providers";
 import {
   AreaChart,
   Area,
@@ -236,6 +237,18 @@ export default function DashboardPageClient({ machineId }) {
   // Fetch all dashboard data
   const fetchDashboardData = useCallback(async () => {
     try {
+      // Fetch provider node names for ID→name mapping
+      let providerNodeNameMap = {};
+      try {
+        const nodesRes = await fetch("/api/provider-nodes");
+        if (nodesRes.ok) {
+          const nodesData = await nodesRes.json();
+          for (const node of (nodesData.nodes || [])) {
+            if (node.id && node.name) providerNodeNameMap[node.id] = node.name;
+          }
+        }
+      } catch {}
+
       // Fetch stats
       const statsRes = await fetch("/api/usage/stats");
       if (statsRes.ok) {
@@ -261,7 +274,7 @@ export default function DashboardPageClient({ machineId }) {
         if (statsData.byProvider) {
           const providers = Object.entries(statsData.byProvider)
             .map(([key, data]) => ({
-              name: key.toUpperCase(),
+              name: providerNodeNameMap[key] || AI_PROVIDERS[key]?.name || key.toUpperCase(),
               requests: data.requests || 0,
               tokens: (data.promptTokens || 0) + (data.completionTokens || 0),
               cost: data.cost || 0,

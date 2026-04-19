@@ -18,8 +18,9 @@ export async function GET(request) {
     const details = detailsResult.details || [];
 
     const latencyByDate = {};
+    const successByDate = {};
     for (const r of details) {
-      if (!r.timestamp || !r.latency?.total) continue;
+      if (!r.timestamp) continue;
       const d = new Date(r.timestamp);
       let key;
       if (period === "24h") {
@@ -27,9 +28,19 @@ export async function GET(request) {
       } else {
         key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       }
-      if (!latencyByDate[key]) latencyByDate[key] = { total: 0, count: 0 };
-      latencyByDate[key].total += r.latency.total;
-      latencyByDate[key].count += 1;
+      // latency
+      if (r.latency?.total) {
+        if (!latencyByDate[key]) latencyByDate[key] = { total: 0, count: 0 };
+        latencyByDate[key].total += r.latency.total;
+        latencyByDate[key].count += 1;
+      }
+      // success/error
+      if (!successByDate[key]) successByDate[key] = { success: 0, errors: 0 };
+      if (r.status === "error") {
+        successByDate[key].errors += 1;
+      } else {
+        successByDate[key].success += 1;
+      }
     }
 
     const latencyData = chartData.map((bucket) => {
@@ -63,8 +74,8 @@ export async function GET(request) {
     return NextResponse.json({
       successRate: chartData.map((b) => ({
         label: b.label,
-        success: b.success,
-        errors: b.errors,
+        success: successByDate[b.label]?.success ?? 0,
+        errors: successByDate[b.label]?.errors ?? 0,
       })),
       latency: latencyData,
       costByProvider,

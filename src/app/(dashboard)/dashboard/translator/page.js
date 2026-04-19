@@ -187,9 +187,25 @@ export default function TranslatorPage() {
     }
   };
 
+  const fallbackCopy = (text) => {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+  };
+
   const handleCopy = async (id) => {
     if (!contents[id]) return;
-    await navigator.clipboard.writeText(contents[id]);
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(contents[id]).catch(() => fallbackCopy(contents[id]));
+    } else {
+      fallbackCopy(contents[id]);
+    }
   };
 
   const handleFormat = (id) => {

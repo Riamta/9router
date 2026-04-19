@@ -23,7 +23,10 @@
     "postinstall": "node hooks/postinstall.js",
     "dev:bun": "bun --bun next dev --webpack --port 20129",
     "build:bun": "NODE_ENV=production bun --bun next build --webpack",
-    "start:bun": "NODE_ENV=production bun ./.next/standalone/server.js"
+    "start:bun": "NODE_ENV=production bun ./.next/standalone/server.js",
+    "docker:build": "docker build -t amritazx/9router:latest .",
+    "docker:push": "docker push amritazx/9router:latest",
+    "docker:publish": "docker build -t amritazx/9router:latest . && docker push amritazx/9router:latest"
   },
   "engines": {
     "node": ">=18.0.0"
