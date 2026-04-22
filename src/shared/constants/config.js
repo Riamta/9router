@@ -81,6 +81,7 @@ export {
   FREE_TIER_PROVIDERS,
   OAUTH_PROVIDERS,
   APIKEY_PROVIDERS,
+  WEB_COOKIE_PROVIDERS,
   AUTH_METHODS,
   isOpenAICompatibleProvider,
   isAnthropicCompatibleProvider,

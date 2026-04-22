@@ -1,29 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useCopyToClipboard } from "@/shared/hooks/useCopyToClipboard";
 
 export default function GetStarted() {
-  const [copied, setCopied] = useState(false);
-
-  const fallbackCopy = (text) => {
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-  };
+  const { copied, copy } = useCopyToClipboard();
 
   const handleCopy = (text) => {
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-    } else {
-      fallbackCopy(text);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    copy(text, "landing");
   };
 
   return (
@@ -84,7 +66,7 @@ export default function GetStarted() {
                   <span className="text-green-400">$</span>
                   <span className="text-white">npx api2k</span>
                   <span className="ml-auto text-gray-500 text-xs opacity-0 group-hover:opacity-100">
-                    {copied ? "✓ Copied" : "Copy"}
+                    {copied === "landing" ? "✓ Copied" : "Copy"}
                   </span>
                 </div>
                 
