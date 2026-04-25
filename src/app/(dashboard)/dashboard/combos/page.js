@@ -266,7 +266,7 @@ function ComboCard({ combo, copied, onCopy, onEdit, onDelete, roundRobinEnabled,
 }
 
 // Inline editable model item
-function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown, onRemove }) {
+function ModelItem({ index, model, isFirst, isLast, isDragging, isDragOver, onEdit, onMoveUp, onMoveDown, onRemove, onDragStart, onDragEnter, onDragEnd }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(model);
 
@@ -283,7 +283,22 @@ function ModelItem({ index, model, isFirst, isLast, onEdit, onMoveUp, onMoveDown
   };
 
   return (
-    <div className="group flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors">
+    <div
+      draggable={!editing}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        onDragStart();
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        onDragEnter();
+      }}
+      onDragOver={(e) => e.preventDefault()}
+      onDragEnd={onDragEnd}
+      className={`group flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors ${isDragging ? "opacity-50" : ""} ${isDragOver ? "ring-1 ring-primary/50 bg-primary/5" : ""}`}
+    >
+      <span className="material-symbols-outlined text-[14px] text-text-muted/60 cursor-grab active:cursor-grabbing select-none" title="Drag to reorder">drag_indicator</span>
+
       {/* Index badge */}
       <span className="text-[10px] font-medium text-text-muted w-3 text-center shrink-0">{index + 1}</span>
 
@@ -347,6 +362,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders }) {
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState("");
   const [modelAliases, setModelAliases] = useState({});
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
   const fetchModalData = async () => {
     try {
@@ -407,6 +423,15 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders }) {
     setModels(newModels);
   };
 
+  const handleDragEnter = (targetIndex) => {
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+    const newModels = [...models];
+    const [draggedModel] = newModels.splice(draggedIndex, 1);
+    newModels.splice(targetIndex, 0, draggedModel);
+    setModels(newModels);
+    setDraggedIndex(targetIndex);
+  };
+
   const handleSave = async () => {
     if (!validateName(name)) return;
     setSaving(true);
@@ -456,6 +481,8 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders }) {
                     model={model}
                     isFirst={index === 0}
                     isLast={index === models.length - 1}
+                    isDragging={draggedIndex === index}
+                    isDragOver={draggedIndex !== null && draggedIndex === index}
                     onEdit={(newVal) => {
                       const updated = [...models];
                       updated[index] = newVal;
@@ -464,6 +491,9 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders }) {
                     onMoveUp={() => handleMoveUp(index)}
                     onMoveDown={() => handleMoveDown(index)}
                     onRemove={() => handleRemoveModel(index)}
+                    onDragStart={() => setDraggedIndex(index)}
+                    onDragEnter={() => handleDragEnter(index)}
+                    onDragEnd={() => setDraggedIndex(null)}
                   />
                 ))}
               </div>

@@ -75,25 +75,8 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
   const [testingModelId, setTestingModelId] = useState(null);
+  const [testingAllModels, setTestingAllModels] = useState(false);
   const [modelTestResults, setModelTestResults] = useState({});
-
-  const handleTestModel = async (modelId) => {
-    if (testingModelId) return;
-    setTestingModelId(modelId);
-    try {
-      const res = await fetch("/api/models/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: `${providerStorageAlias}/${modelId}` }),
-      });
-      const data = await res.json();
-      setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
-    } catch {
-      setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
-    } finally {
-      setTestingModelId(null);
-    }
-  };
 
   const providerAliases = Object.entries(modelAliases).filter(
     ([, model]) => model.startsWith(`${providerStorageAlias}/`)
@@ -104,6 +87,62 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
     fullModel,
     alias,
   }));
+
+  const runModelTest = async (modelId) => {
+    const res = await fetch("/api/models/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: `${providerStorageAlias}/${modelId}` }),
+    });
+    const data = await res.json();
+    setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
+    return data;
+  };
+
+  const handleTestModel = async (modelId) => {
+    if (testingModelId || testingAllModels) return;
+    setTestingModelId(modelId);
+    try {
+      await runModelTest(modelId);
+    } catch {
+      setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
+    } finally {
+      setTestingModelId(null);
+    }
+  };
+
+  const handleTestAllModels = async () => {
+    if (testingModelId || testingAllModels || allModels.length === 0) return;
+    setTestingAllModels(true);
+    try {
+      const res = await fetch("/api/models/test-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          models: allModels.map(({ modelId }) => ({ id: modelId, model: `${providerStorageAlias}/${modelId}` })),
+        }),
+      });
+      const data = await res.json();
+      const results = data.results || [];
+      setModelTestResults((prev) => ({
+        ...prev,
+        ...Object.fromEntries(results.map((result) => [result.id, result.ok ? "ok" : "error"])),
+      }));
+      if (!res.ok && results.length === 0) {
+        setModelTestResults((prev) => ({
+          ...prev,
+          ...Object.fromEntries(allModels.map(({ modelId }) => [modelId, "error"])),
+        }));
+      }
+    } catch {
+      setModelTestResults((prev) => ({
+        ...prev,
+        ...Object.fromEntries(allModels.map(({ modelId }) => [modelId, "error"])),
+      }));
+    } finally {
+      setTestingAllModels(false);
+    }
+  };
 
   const generateDefaultAlias = (modelId) => {
     const parts = modelId.split("/");
@@ -205,6 +244,15 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
         <Button size="sm" variant="secondary" icon="download" onClick={handleImport} disabled={!canImport || importing}>
           {importing ? "Importing..." : "Import from /models"}
         </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          icon={testingAllModels ? "progress_activity" : "science"}
+          onClick={handleTestAllModels}
+          disabled={testingAllModels || !!testingModelId || allModels.length === 0}
+        >
+          {testingAllModels ? "Testing..." : "Test All"}
+        </Button>
       </div>
 
       {!canImport && (
@@ -223,9 +271,9 @@ export default function CompatibleModelsSection({ providerStorageAlias, provider
               copied={copied}
               onCopy={onCopy}
               onDeleteAlias={() => onDeleteAlias(alias)}
-              onTest={connections.length > 0 ? () => handleTestModel(modelId) : undefined}
+              onTest={() => handleTestModel(modelId)}
               testStatus={modelTestResults[modelId]}
-              isTesting={testingModelId === modelId}
+              isTesting={testingAllModels || testingModelId === modelId}
             />
           ))}
         </div>

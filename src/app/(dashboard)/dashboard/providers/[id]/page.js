@@ -37,6 +37,7 @@ export default function ProviderDetailPage() {
   const [modelTestResults, setModelTestResults] = useState({});
   const [modelsTestError, setModelsTestError] = useState("");
   const [testingModelId, setTestingModelId] = useState(null);
+  const [testingAllModels, setTestingAllModels] = useState(false);
   const [showAddCustomModel, setShowAddCustomModel] = useState(false);
   const [selectedConnectionIds, setSelectedConnectionIds] = useState([]);
   const [bulkProxyPoolId, setBulkProxyPoolId] = useState("__none__");
@@ -549,23 +550,83 @@ export default function ProviderDetailPage() {
     </Modal>
   );
 
+  const runModelTest = async (modelId) => {
+    const res = await fetch("/api/models/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: `${providerStorageAlias}/${modelId}` }),
+    });
+    const data = await res.json();
+    setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
+    return data;
+  };
+
   const handleTestModel = async (modelId) => {
-    if (testingModelId) return;
+    if (testingModelId || testingAllModels) return;
     setTestingModelId(modelId);
     try {
-      const res = await fetch("/api/models/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: `${providerStorageAlias}/${modelId}` }),
-      });
-      const data = await res.json();
-      setModelTestResults((prev) => ({ ...prev, [modelId]: data.ok ? "ok" : "error" }));
+      const data = await runModelTest(modelId);
       setModelsTestError(data.ok ? "" : (data.error || "Model not reachable"));
     } catch {
       setModelTestResults((prev) => ({ ...prev, [modelId]: "error" }));
       setModelsTestError("Network error");
     } finally {
       setTestingModelId(null);
+    }
+  };
+
+  const getAvailableModelIds = () => {
+    const displayModelIds = [
+      ...models,
+      ...kiloFreeModels.filter((fm) => !models.some((m) => m.id === fm.id)),
+    ].filter((m) => !m.type || m.type === "llm").map((m) => m.id);
+
+    const customModelIds = Object.entries(modelAliases)
+      .filter(([alias, fullModel]) => {
+        const prefix = `${providerStorageAlias}/`;
+        if (!fullModel.startsWith(prefix)) return false;
+        const modelId = fullModel.slice(prefix.length);
+        if (providerInfo.passthroughModels) return !models.some((m) => m.id === modelId);
+        return !models.some((m) => m.id === modelId) && alias === modelId;
+      })
+      .map(([, fullModel]) => fullModel.slice(`${providerStorageAlias}/`.length));
+
+    return [...displayModelIds, ...customModelIds];
+  };
+
+  const handleTestAllModels = async () => {
+    if (testingModelId || testingAllModels || isCompatible) return;
+    const modelIds = getAvailableModelIds();
+    if (modelIds.length === 0) return;
+
+    setTestingAllModels(true);
+    setModelsTestError("");
+    try {
+      const res = await fetch("/api/models/test-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          models: modelIds.map((modelId) => ({ id: modelId, model: `${providerStorageAlias}/${modelId}` })),
+        }),
+      });
+      const data = await res.json();
+      const results = data.results || [];
+      setModelTestResults((prev) => ({
+        ...prev,
+        ...Object.fromEntries(results.map((result) => [result.id, result.ok ? "ok" : "error"])),
+      }));
+      const firstFailed = results.find((result) => !result.ok);
+      const firstError = firstFailed ? `${firstFailed.id}: ${firstFailed.error || "Model not reachable"}` : "";
+      setModelsTestError(firstError);
+      if (!res.ok && !firstError) setModelsTestError(data.error || "Test all failed");
+    } catch {
+      setModelTestResults((prev) => ({
+        ...prev,
+        ...Object.fromEntries(modelIds.map((modelId) => [modelId, "error"])),
+      }));
+      setModelsTestError("Network error");
+    } finally {
+      setTestingAllModels(false);
     }
   };
 
@@ -627,8 +688,8 @@ export default function ProviderDetailPage() {
               onSetAlias={(alias) => handleSetAlias(model.id, alias, providerStorageAlias)}
               onDeleteAlias={() => handleDeleteAlias(existingAlias)}
               testStatus={modelTestResults[model.id]}
-              onTest={connections.length > 0 || isFreeNoAuth ? () => handleTestModel(model.id) : undefined}
-              isTesting={testingModelId === model.id}
+              onTest={() => handleTestModel(model.id)}
+              isTesting={testingAllModels || testingModelId === model.id}
               isFree={model.isFree}
             />
           );
@@ -646,8 +707,8 @@ export default function ProviderDetailPage() {
             onSetAlias={() => {}}
             onDeleteAlias={() => handleDeleteAlias(model.alias)}
             testStatus={modelTestResults[model.id]}
-            onTest={connections.length > 0 || isFreeNoAuth ? () => handleTestModel(model.id) : undefined}
-            isTesting={testingModelId === model.id}
+            onTest={() => handleTestModel(model.id)}
+            isTesting={testingAllModels || testingModelId === model.id}
             isCustom
             isFree={false}
           />
@@ -960,6 +1021,17 @@ export default function ProviderDetailPage() {
           <h2 className="text-lg font-semibold">
             {"Available Models"}
           </h2>
+          {!isCompatible && (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={testingAllModels ? "progress_activity" : "science"}
+              onClick={handleTestAllModels}
+              disabled={testingAllModels || !!testingModelId || getAvailableModelIds().length === 0}
+            >
+              {testingAllModels ? "Testing..." : "Test All"}
+            </Button>
+          )}
         </div>
         {!!modelsTestError && (
           <p className="text-xs text-red-500 mb-3 break-words">{modelsTestError}</p>
